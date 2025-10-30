@@ -11,11 +11,10 @@ defined('MOODLE_INTERNAL') || die();
 $string['pluginname'] = 'Cheat Detection';
 $string['privacy:metadata'] = 'The Cheat Detection quiz access rule plugin does not store any personal data.'; // TODO A VERIFIER
 
-// Settings
-$string['cheatdetectenabled'] = 'Enable cheat detection';
-$string['cheatdetectenabled_help'] = 'If enabled, the quiz will monitor user behavior to detect potential cheating.';
-
 // Results
 $string['cheatdetection'] = 'Cheat Detection';
 $string['noeventsdetected'] = 'No suspicious events detected';
 $string['eventsdetected'] = '{$a} suspicious event(s) detected';
+
+// Quiz creation layout
+$string['layoutwarning'] = 'Warning: In this configuration, the cheat detection plugin cannot function. To use it, please select the "Each question" setting.';

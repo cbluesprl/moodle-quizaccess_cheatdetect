@@ -51,11 +51,20 @@ class quizaccess_cheatdetect extends quizaccess_cheat_detect_parent_class {
      * @throws coding_exception
      */
     public static function add_settings_form_fields(mod_quiz_mod_form $quizform, MoodleQuickForm $mform) {
-        $mform->addElement('selectyesno', 'cheatdetectenabled',
-            get_string('cheatdetectenabled', 'quizaccess_cheatdetect'));
-        $mform->addHelpButton('cheatdetectenabled',
-            'cheatdetectenabled', 'quizaccess_cheatdetect');
-        $mform->setDefault('cheatdetectenabled', 1);
+        global $PAGE;
+        $mform->addElement(
+            'static',
+            'cheatdetect_layout_warning',
+            '',
+            '<div id="cheatdetect_layout_warning" class="mt-2 alert alert-warning" style="display: none;" role="alert">
+                <i class="fa fa-exclamation-triangle"></i> ' .
+                get_string('layoutwarning', 'quizaccess_cheatdetect') .
+            '</div>'
+        );
+        $PAGE->requires->js_call_amd(
+            'quizaccess_cheatdetect/layout_checker',
+            'init'
+        );
     }
 
     /**

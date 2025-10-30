@@ -11,11 +11,10 @@ defined('MOODLE_INTERNAL') || die();
 $string['pluginname'] = 'Détection de triche';
 $string['privacy:metadata'] = 'Le plugin de règle d\'accès aux quiz Détection de triche ne stocke aucune donnée personnelle.'; // TODO A VERIFIER
 
-// Settings
-$string['cheatdetectenabled'] = 'Activer la détection de triche';
-$string['cheatdetectenabled_help'] = 'Si activé, le quiz surveillera le comportement de l\'utilisateur pour détecter une triche potentielle.';
-
 // Results
 $string['cheatdetection'] = 'Détection de triche';
 $string['noeventsdetected'] = 'Aucun événement suspect détecté';
 $string['eventsdetected'] = '{$a} événement(s) suspect(s) détecté(s)';
+
+// Quiz creation layout
+$string['layoutwarning'] = 'Attention, dans cette configuration, le plugin de détection de triche ne peut pas fonctionner. Pour l\'utiliser, veuillez sélectionner le paramètre "Chaque question".';
