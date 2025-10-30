@@ -1,4 +1,5 @@
 <?php
+
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -15,20 +16,27 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * @package     quizaccess_cheatdetect
- * @copyright   2025 CBlue SPRL
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @author      gnormand@cblue.be
+ * @copyright  2025 CBlue SRL <support@cblue.be>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+namespace quizaccess_cheatdetect\rest_services\middlewares;
+
+use Exception;
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2025103002;
-$plugin->requires  = 2022041900;
-$plugin->component = 'quizaccess_cheatdetect';
-$plugin->maturity = MATURITY_STABLE;
-$plugin->release = 'v2.0';
+class SessionMiddleware
+{
+    /**
+     * @throws Exception
+     */
+    public function handle()
+    {
+        if (!isloggedin()) {
+            throw new Exception('Unauthorized');
+        }
 
-$plugin->dependencies = [
-    'local_rest' => ANY_VERSION,
-];
+        return null;
+    }
+}

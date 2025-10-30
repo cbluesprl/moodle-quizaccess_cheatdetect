@@ -115,7 +115,25 @@ class quizaccess_cheatdetect extends quizaccess_cheat_detect_parent_class {
      * @param moodle_page $page the page object
      */
     public function setup_attempt_page($page) {
-        global $PAGE;
-        $PAGE->requires->js_call_amd('quizaccess_cheatdetect/detector', 'init');
+        global $PAGE, $USER;
+
+        $attemptid = optional_param('attempt', 0, PARAM_INT);
+        $slot = optional_param('slot', null, PARAM_INT);
+
+        $sessionId = session_id();
+        if (empty($sessionId)) {
+            $sessionId = md5(uniqid(rand(), true));
+        }
+
+        $params = [
+            'sessionId' => $sessionId,
+            'attemptid' => $attemptid,
+            'userid' => $USER->id,
+            'quizid' => $this->quiz->id,
+            'slot' => $slot,
+            'startDetection' => true
+        ];
+
+        $PAGE->requires->js_call_amd('quizaccess_cheatdetect/tracking/index', 'init', [$params]);
     }
 }

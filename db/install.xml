@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XMLDB PATH="mod/quiz/accessrule/cheatdetect/db" VERSION="2025103001" COMMENT="Defines tables for quizaccess_cheatdetect">
+    <TABLES>
+        <TABLE NAME="quizaccess_cheatdetect_sess" COMMENT="Stores quiz attempt sessions with focus tracking">
+            <FIELDS>
+                <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+                <FIELD NAME="session_id" TYPE="char" LENGTH="255" NOTNULL="true"/>
+                <FIELD NAME="attemptid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+                <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+                <FIELD NAME="quizid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+                <FIELD NAME="slot" TYPE="int" LENGTH="10" NOTNULL="false"/>
+                <FIELD NAME="duration" TYPE="int" LENGTH="10" NOTNULL="true"/>
+                <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
+            </FIELDS>
+            <KEYS>
+                <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+            </KEYS>
+            <INDEXES>
+                <INDEX NAME="attemptid_idx" UNIQUE="false" FIELDS="attemptid"/>
+                <INDEX NAME="userid_idx" UNIQUE="false" FIELDS="userid"/>
+                <INDEX NAME="quizid_idx" UNIQUE="false" FIELDS="quizid"/>
+                <INDEX NAME="slot_idx" UNIQUE="false" FIELDS="slot"/>
+            </INDEXES>
+        </TABLE>
+
+        <TABLE NAME="quizaccess_cheatdetect_data" COMMENT="Stores JSON data associated with sessions">
+            <FIELDS>
+                <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+                <FIELD NAME="sessionid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+                <FIELD NAME="data" TYPE="text" NOTNULL="true" COMMENT="Stores JSON"/>
+            </FIELDS>
+            <KEYS>
+                <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+            </KEYS>
+            <INDEXES>
+                <INDEX NAME="sessionid_idx" UNIQUE="false" FIELDS="sessionid"/>
+            </INDEXES>
+        </TABLE>
+    </TABLES>
+</XMLDB>
