@@ -25,33 +25,10 @@ define([], function() {
      */
 
     /**
-     * @typedef {Object} UIConfig
-     * @property {ModalConfig} modal - Configuration de la modale d'avertissement
-     */
-
-    /**
-     * @typedef {Object} ModalConfig
-     * @property {string} icon - Icône à afficher
-     * @property {string} title - Titre de la modale
-     * @property {string} message - Message HTML avec placeholder %extension.name%
-     * @property {string} buttonText - Texte du bouton
-     * @property {ThemeConfig} theme - Configuration du thème visuel
-     */
-
-    /**
-     * @typedef {Object} ThemeConfig
-     * @property {string} primaryColor - Couleur primaire
-     * @property {string} backgroundColor - Couleur de fond
-     * @property {string} borderRadius - Rayon des bordures
-     * @property {number} zIndex - Index Z pour l'affichage
-     */
-
-    /**
      * @typedef {Object} SettingsConfig
      * @property {number} shadowDOMCheckDelay - Délai de vérification du Shadow DOM (ms)
      * @property {number} fileCheckTimeout - Timeout pour la vérification des fichiers (ms)
      * @property {boolean} removeDetectedElements - Supprimer les éléments détectés
-     * @property {boolean} reloadOnModalClose - Recharger la page à la fermeture de la modale
      * @property {boolean} enableLogging - Activer les logs de débogage
      */
 
@@ -98,28 +75,6 @@ define([], function() {
     };
 
     /**
-     * Configuration de l'interface utilisateur
-     * @type {UIConfig}
-     * @readonly
-     */
-    var UI = {
-        modal: {
-            icon: `⚠️`,
-            title: `Avertissement d'intégrité académique.`,
-            message: `<p>L'extension <b>&laquo; %extension.name% &raquo;</b> a été détectée sur votre navigateur. Cette extension est incompatible avec les normes d'intégrité académique de notre plateforme. Veuillez la désactiver ou la désinstaller de votre navigateur pour continuer.</p>`,
-            buttonText: `OK — J'ai retiré l'extension et je continue`,
-
-            // Style
-            theme: {
-                primaryColor: `var(--primary, "#d73502")`,
-                backgroundColor: `#ffffff`,
-                borderRadius: `12px`,
-                zIndex: 10000
-            }
-        }
-    };
-
-    /**
      * Paramètres de détection
      * @type {SettingsConfig}
      * @readonly
@@ -128,7 +83,6 @@ define([], function() {
         shadowDOMCheckDelay: 1000,
         fileCheckTimeout: 5000,
         removeDetectedElements: true,
-        reloadOnModalClose: false,
         enableLogging: true
     };
 
@@ -188,7 +142,6 @@ define([], function() {
     // API publique
     return {
         EXTENSIONS: EXTENSIONS,
-        UI: UI,
         SETTINGS: SETTINGS,
         EXTENSION_URL_REGEX: EXTENSION_URL_REGEX,
         getExtension: getExtension,

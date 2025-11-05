@@ -8,9 +8,8 @@
 
 define([
     'quizaccess_cheatdetect/extension-detector/index',
-    'quizaccess_cheatdetect/shared/utils',
-    'quizaccess_cheatdetect/shared/modal'
-], function (ExtensionDetector, SharedUtils, Modal) {
+    'quizaccess_cheatdetect/shared/utils'
+], function(ExtensionDetector, SharedUtils) {
     'use strict';
 
     /**
@@ -37,7 +36,7 @@ define([
      * @property {string} userValue - Valeur saisie par l'utilisateur
      */
 
-    var init = function (backendParams) {
+    var init = function(backendParams) {
 
         const userActivityTracker = () => {
             let db = null;
@@ -50,8 +49,9 @@ define([
             let extensionCheckInterval = null;
             let extensionDetectedDataAlreadySent = new Set();
 
-            let pendingModalEvents = [];
-
+            /**
+             *
+             */
             function getExtensionsMetrics() {
                 try {
                     const metricsJSON = ExtensionDetector.getMetrics();
@@ -71,13 +71,16 @@ define([
                 }
             }
 
+            /**
+             *
+             */
             function checkForNewExtensions() {
                 const currentExtensions = getExtensionsMetrics();
                 const newData = [];
 
                 for (const [key, value] of Object.entries(currentExtensions)) {
                     for (const detectedElement of value.detected) {
-                        const _data = JSON.stringify({ extensionKey: key, detectedElementUid: detectedElement.uid });
+                        const _data = JSON.stringify({extensionKey: key, detectedElementUid: detectedElement.uid});
                         if (!extensionDetectedDataAlreadySent.has(_data)) {
                             extensionDetectedDataAlreadySent.add(_data);
                             newData.push(detectedElement);
@@ -93,28 +96,9 @@ define([
                 }
             }
 
-            function modalEventLogger(event) {
-
-                if (!db) {
-                    pendingModalEvents.push(event);
-                    return;
-                }
-
-                logEvent(event);
-            }
-
-            function flushPendingModalEvents() {
-                if (pendingModalEvents.length > 0 && db) {
-                    console.log('Vidage de événement(s) de modale en attente');
-
-                    pendingModalEvents.forEach(event => {
-                        logEvent(event);
-                    });
-
-                    pendingModalEvents = [];
-                }
-            }
-
+            /**
+             *
+             */
             function startExtensionMonitoring() {
                 checkForNewExtensions();
 
@@ -126,6 +110,9 @@ define([
                 }, 5000);
             }
 
+            /**
+             *
+             */
             function stopExtensionMonitoring() {
                 if (extensionCheckInterval) {
                     clearInterval(extensionCheckInterval);
@@ -133,10 +120,16 @@ define([
                 }
             }
 
+            /**
+             *
+             */
             function checkIndexedDBAvailability() {
                 return window.indexedDB;
             }
 
+            /**
+             *
+             */
             function initIndexedDB() {
                 return new Promise((resolve, reject) => {
                     if (!checkIndexedDBAvailability()) {
@@ -155,9 +148,6 @@ define([
 
                     request.onsuccess = (event) => {
                         db = event.target.result;
-
-                        flushPendingModalEvents();
-
                         resolve();
                     };
 
@@ -168,6 +158,10 @@ define([
                 });
             }
 
+            /**
+             *
+             * @param newEvent
+             */
             function logEvent(newEvent) {
                 if (db) {
                     const transaction = db.transaction("events", "readwrite");
@@ -183,6 +177,10 @@ define([
                 }
             }
 
+            /**
+             *
+             * @param event
+             */
             function trackFieldModification(event) {
                 const element = event.target;
                 const tagName = element.tagName.toLowerCase();
@@ -223,6 +221,10 @@ define([
                 logEvent(newEvent);
             }
 
+            /**
+             *
+             * @param event
+             */
             function trackDocumentState(event) {
                 const now = performance.now();
                 let type = event.type;
@@ -264,6 +266,10 @@ define([
                 }
             }
 
+            /**
+             *
+             * @param event
+             */
             function trackCopy(event) {
                 const copiedText = window.getSelection().toString();
                 if (copiedText) {
@@ -280,6 +286,10 @@ define([
                 }
             }
 
+            /**
+             *
+             * @param event
+             */
             function trackPaste(event) {
                 const pastedText = (event.clipboardData || window.clipboardData)?.getData("text");
                 if (pastedText) {
@@ -320,6 +330,10 @@ define([
                 }
             }
 
+            /**
+             *
+             * @param currentTime
+             */
             function checkSuspiciousCopyThenBackground(currentTime) {
                 if (lastCopyTime && lastCopyContent) {
                     const timeSinceCopy = currentTime - lastCopyTime;
@@ -339,6 +353,9 @@ define([
                 }
             }
 
+            /**
+             *
+             */
             function initTracking() {
                 if (window._trackingInitialized) {
                     console.warn('Tracking déjà initialisé, ignoré');
@@ -355,6 +372,9 @@ define([
                     }
                 };
                 logEvent(pageLoadEvent);
+
+                // Démarrer le détecteur d'extensions
+                ExtensionDetector.init(backendParams);
 
                 startExtensionMonitoring();
 
@@ -390,6 +410,9 @@ define([
                 trackDocumentState({type: 'visibilitychange'});
             }
 
+            /**
+             *
+             */
             function flushEvents() {
                 if (db) {
                     const transaction = db.transaction("events", "readonly");
@@ -416,7 +439,7 @@ define([
                                 body: JSON.stringify(data)
                             }).then(response => {
                                 if (response.ok) {
-                                    console.log('action(s) utilisateur envoyée(s) au serveur', data);
+                                    console.log('Action(s) utilisateur envoyée(s) au serveur', data);
                                     clearStoredEvents();
                                 } else {
                                     console.error('Erreur lors de l\'envoi des événements');
@@ -435,13 +458,14 @@ define([
                 }
             }
 
+            /**
+             *
+             */
             function clearStoredEvents() {
                 const transaction = db.transaction("events", "readwrite");
                 const objectStore = transaction.objectStore("events");
                 objectStore.clear();
             }
-
-            Modal.setEventLogger(modalEventLogger);
 
             initIndexedDB().then(() => {
                 initTracking();

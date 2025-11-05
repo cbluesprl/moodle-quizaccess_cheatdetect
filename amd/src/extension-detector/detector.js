@@ -11,9 +11,8 @@ define([
     'quizaccess_cheatdetect/extension-detector/browser',
     'quizaccess_cheatdetect/extension-detector/shadow',
     'quizaccess_cheatdetect/shared/utils',
-    'quizaccess_cheatdetect/extension-detector/metrics-manager',
-    'quizaccess_cheatdetect/shared/modal'
-], function(Config, Browser, Shadow, SharedUtils, MetricsManager, Modal) {
+    'quizaccess_cheatdetect/extension-detector/metrics-manager'
+], function(Config, Browser, Shadow, SharedUtils, MetricsManager) {
     'use strict';
 
     /**
@@ -21,7 +20,6 @@ define([
      * @property {Set<string>} detectedExtensions - Extensions détectées
      * @property {Map<string, number>} extensionPaths - Chemins d'extension avec timestamp
      * @property {boolean} isRunning - État de fonctionnement
-     * @property {boolean} modalShown - Modale déjà affichée
      */
 
     /**
@@ -51,7 +49,6 @@ define([
         this.detectedExtensions = new Set();
         this.extensionPaths = new Map();
         this.isRunning = false;
-        this.modalShown = false;
     };
 
     /**
@@ -96,7 +93,9 @@ define([
      * @since 1.0.0
      */
     ExtensionDetector.prototype.stop = function() {
-        if (!this.isRunning) return;
+        if (!this.isRunning) {
+ return;
+}
 
         if (Config.SETTINGS.enableLogging) {
             console.log('🧩 Extension Detector: Arrêt du système de détection');
@@ -143,7 +142,9 @@ define([
      */
     ExtensionDetector.prototype._onExtensionDetected = function(extensionKey, extension, method) {
         // Éviter les détections dupliquées
-        if (this.detectedExtensions.has(extensionKey)) return;
+        if (this.detectedExtensions.has(extensionKey)) {
+ return;
+}
 
         this.detectedExtensions.add(extensionKey);
 
@@ -154,12 +155,6 @@ define([
         // Logger l'événement de détection
         if (Config.SETTINGS.enableLogging) {
             this._logDetection(extensionKey, extension.name, method);
-        }
-
-        // CORRECTION: Afficher la modale TOUJOURS (sécurité critique)
-        // même si startDetection = false dans les paramètres backend
-        if (!this.modalShown) {
-            this._showWarningModal(extension);
         }
     };
 
@@ -174,7 +169,10 @@ define([
     ExtensionDetector.prototype._onExtensionIdDetected = function(extensionPath) {
         var self = this;
 
-        if (this.extensionPaths.has(extensionPath)) return;
+        console.log('extensionPath', extensionPath);
+        if (this.extensionPaths.has(extensionPath)) {
+ return;
+}
 
         if (Config.SETTINGS.enableLogging) {
             console.log('🧩 Extension Detector: Chemin d\'extension détecté - ' + extensionPath);
@@ -209,7 +207,9 @@ define([
         var extensions = Config.getAllExtensions();
 
         extensions.forEach(function(extension) {
-            if (!extension.files || Object.keys(extension.files).length === 0) return;
+            if (!extension.files || Object.keys(extension.files).length === 0) {
+ return;
+}
 
             self.browserHandler.checkFiles(extensionPath, extension.files)
                 .then(function(result) {
@@ -226,23 +226,6 @@ define([
     };
 
     /**
-     * Affiche la modale d'avertissement
-     * @memberof ExtensionDetector
-     * @function _showWarningModal
-     * @param {Object} extension - Configuration de l'extension
-     * @private
-     * @since 1.0.0
-     */
-    ExtensionDetector.prototype._showWarningModal = function(extension) {
-        this.modalShown = true;
-        try {
-            Modal.showModal(extension, Config.UI.modal);
-        } catch (error) {
-            console.error('🧩 Extension Detector: Échec de l\'affichage de la modale', error);
-        }
-    };
-
-    /**
      * Réinitialise l'état de détection
      * @memberof ExtensionDetector
      * @function _resetState
@@ -252,7 +235,6 @@ define([
     ExtensionDetector.prototype._resetState = function() {
         this.detectedExtensions.clear();
         this.extensionPaths.clear();
-        this.modalShown = false;
         this.shadowMonitor.reset();
         this.metricsManager.reset();
     };
@@ -364,7 +346,9 @@ define([
      * @since 1.0.0
      */
     ExtensionDetector.prototype._logDetection = function(extensionKey, extensionName, method) {
-        if (!Config.SETTINGS.enableLogging) return;
+        if (!Config.SETTINGS.enableLogging) {
+ return;
+}
 
         var event = {
             timestamp: SharedUtils.generateTimestamp().unix,

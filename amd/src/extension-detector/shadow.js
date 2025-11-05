@@ -8,9 +8,8 @@
 
 define([
     'quizaccess_cheatdetect/extension-detector/config',
-    'quizaccess_cheatdetect/shared/utils',
-    'quizaccess_cheatdetect/shared/modal'
-], function(Config, SharedUtils, Modal) {
+    'quizaccess_cheatdetect/shared/utils'
+], function(Config, SharedUtils) {
     'use strict';
 
     /**
@@ -198,11 +197,6 @@ define([
     ShadowMonitor.prototype._checkAndProcessElement = function(element, source) {
         if (!element) return false;
 
-        // PROTECTION: Ne jamais traiter nos propres modales d'avertissement
-        if (this._isOurWarningModal(element)) {
-            return false;
-        }
-
         var extensions = Config.getAllExtensions();
 
         for (var i = 0; i < extensions.length; i++) {
@@ -212,33 +206,6 @@ define([
                 this._processDetectedElement(extension.key, element, source);
                 return true;
             }
-        }
-
-        return false;
-    };
-
-    /**
-     * Vérifie si l'élément fait partie de notre modale d'avertissement
-     * @memberof ShadowMonitor
-     * @function _isOurWarningModal
-     * @param {Element} element - Élément à vérifier
-     * @returns {boolean} True si l'élément fait partie de notre modale
-     * @private
-     * @since 1.0.0
-     */
-    ShadowMonitor.prototype._isOurWarningModal = function(element) {
-        var current = element;
-        var maxDepth = 5;
-        var depth = 0;
-
-        while (current && depth < maxDepth) {
-            if (current.nodeType === Node.ELEMENT_NODE) {
-                if (current.id && Modal.isOurModalId(current.id)) {
-                    return true;
-                }
-            }
-            current = current.parentNode;
-            depth++;
         }
 
         return false;
