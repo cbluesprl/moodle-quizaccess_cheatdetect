@@ -22,28 +22,16 @@ define([
      * @property {number} [slot] - Numéro de slot de question
      */
 
-    /**
-     * @typedef {Object} UserEvent
-     * @property {Object} timestamp - Horodatage avec timezone
-     * @property {string} action - Type d'action effectuée
-     * @property {Object} data - Données associées à l'événement
-     */
-
-    /**
-     * @typedef {Object} FieldModificationData
-     * @property {Object} target - Informations sur l'élément cible
-     * @property {number} valueLength - Longueur de la valeur saisie
-     * @property {string} userValue - Valeur saisie par l'utilisateur
-     */
-
     var init = function(backendParams) {
+        // Ne rien faire si startDetection n'est pas explicitement true
+        if (backendParams.startDetection !== true) {
+            console.log('Tracking désactivé: startDetection !== true');
+            return;
+        }
 
         const userActivityTracker = () => {
             let db = null;
             let isCurrentlyFocused = !document.hidden;
-
-            let lastCopyTime = null;
-            let lastCopyContent = "";
 
             let lastKnownExtensions = {};
             let extensionCheckInterval = null;
@@ -177,49 +165,6 @@ define([
                 }
             }
 
-            /**
-             *
-             * @param event
-             */
-            function trackFieldModification(event) {
-                const element = event.target;
-                const tagName = element.tagName.toLowerCase();
-
-                if (!['input', 'textarea', 'select'].includes(tagName)) {
-                    return;
-                }
-
-                let userValue;
-                if (element.type === 'checkbox') {
-                    userValue = element.checked ? element.value : null;
-                } else if (element.type === 'radio') {
-                    userValue = element.checked ? element.value : null;
-                } else {
-                    userValue = element.value;
-                }
-
-                if (element.type === 'radio' && !element.checked) {
-                    return;
-                }
-
-                const attributesObject = Object.fromEntries(
-                    element.getAttributeNames().map(attr => [attr, element.getAttribute(attr)])
-                );
-
-                const newEvent = {
-                    action: "field_modified",
-                    data: {
-                        target: {
-                            tag: tagName,
-                            attributes: attributesObject
-                        },
-                        valueLength: userValue ? userValue.length : 0,
-                        userValue: userValue,
-                    }
-                };
-
-                logEvent(newEvent);
-            }
 
             /**
              *
@@ -260,98 +205,74 @@ define([
                             }
                         };
                         logEvent(blurEvent);
-
-                        checkSuspiciousCopyThenBackground(now);
                     }
                 }
             }
 
             /**
-             *
+             * Track copy events only within .qtext elements inside question divs
              * @param event
              */
             function trackCopy(event) {
-                const copiedText = window.getSelection().toString();
-                if (copiedText) {
-                    lastCopyTime = performance.now();
-                    lastCopyContent = copiedText;
+                const selection = window.getSelection();
+                const copiedText = selection.toString();
 
-                    const newEvent = {
-                        action: "copy",
-                        data: {
-                            content: copiedText
-                        }
-                    };
-                    logEvent(newEvent);
+                if (!copiedText) {
+                    return;
                 }
-            }
 
-            /**
-             *
-             * @param event
-             */
-            function trackPaste(event) {
-                const pastedText = (event.clipboardData || window.clipboardData)?.getData("text");
-                if (pastedText) {
-                    const element = event.target;
-                    const tagName = element.tagName.toLowerCase();
-                    const pasteSameAsCopy = pastedText === lastCopyContent;
-                    const attributesObject = Object.fromEntries(
-                        element.getAttributeNames().map(attr => [attr, element.getAttribute(attr)])
-                    );
+                // Check if the selection is within a .qtext element
+                const anchorNode = selection.anchorNode;
+                if (!anchorNode) {
+                    return;
+                }
 
-                    const newEvent = {
-                        action: "paste",
-                        data: {
-                            content: pastedText,
-                            pasteSameAsCopy: pasteSameAsCopy,
-                            target: {
-                                tag: tagName,
-                                attributes: attributesObject
-                            }
-                        }
-                    };
-                    logEvent(newEvent);
+                // Get the parent element (anchorNode might be a text node)
+                let element = anchorNode.nodeType === Node.TEXT_NODE ? anchorNode.parentElement : anchorNode;
 
-                    if (!lastCopyContent || pastedText !== lastCopyContent) {
-                        const suspiciousEvent = {
-                            action: "paste_different_content",
-                            data: {
-                                lastCopy: lastCopyContent || null,
-                                currentPaste: pastedText,
-                                target: {
-                                    tag: tagName,
-                                    attributes: attributesObject
-                                }
-                            }
-                        };
-                        logEvent(suspiciousEvent);
+                // Traverse up to find .qtext element
+                let qtextElement = null;
+                let currentElement = element;
+                while (currentElement && currentElement !== document.body) {
+                    if (currentElement.classList && currentElement.classList.contains('qtext')) {
+                        qtextElement = currentElement;
+                        break;
                     }
+                    currentElement = currentElement.parentElement;
                 }
-            }
 
-            /**
-             *
-             * @param currentTime
-             */
-            function checkSuspiciousCopyThenBackground(currentTime) {
-                if (lastCopyTime && lastCopyContent) {
-                    const timeSinceCopy = currentTime - lastCopyTime;
+                if (!qtextElement) {
+                    return; // Not inside a .qtext element
+                }
 
-                    if (timeSinceCopy < 30000) {
-                        const suspiciousEvent = {
-                            action: "copy_then_background",
-                            data: {
-                                copiedContent: lastCopyContent
-                            }
-                        };
-                        logEvent(suspiciousEvent);
+                // Check if .qtext is inside a question div with id pattern question-x-y
+                let questionElement = null;
+                currentElement = qtextElement;
+                const questionIdPattern = /^question-\d+-\d+$/;
 
-                        lastCopyTime = null;
-                        lastCopyContent = "";
+                while (currentElement && currentElement !== document.body) {
+                    if (currentElement.id && questionIdPattern.test(currentElement.id)) {
+                        questionElement = currentElement;
+                        break;
                     }
+                    currentElement = currentElement.parentElement;
                 }
+
+                if (!questionElement) {
+                    return; // Not inside a valid question div
+                }
+
+                // Log the copy event with question context
+                const newEvent = {
+                    action: "copy",
+                    data: {
+                        content: copiedText,
+                        questionId: questionElement.id
+                    }
+                };
+                logEvent(newEvent);
             }
+
 
             /**
              *
@@ -387,13 +308,6 @@ define([
                 window.addEventListener("blur", trackDocumentState);
 
                 document.addEventListener("copy", (event) => trackCopy(event));
-
-                document.addEventListener("paste", (event) => trackPaste(event));
-
-                document.addEventListener("cut", (event) => trackCopy(event));
-
-                document.addEventListener("input", (event) => trackFieldModification(event));
-                document.addEventListener("change", (event) => trackFieldModification(event));
 
                 window.addEventListener("beforeunload", () => {
                     stopExtensionMonitoring();
