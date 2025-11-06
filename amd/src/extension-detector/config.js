@@ -42,26 +42,11 @@ define([], function() {
             key: 'crowdly',
             name: 'Crowdly – AI Study Assistant for Moodle',
 
-            // IDs d'extension par navigateur
-            extensionIds: {
-                chrome: 'idipjdgkafkkbklacjonnhkammdpigol',
-                edge: 'idipjdgkafkkbklacjonnhkammdpigol',
-            },
+            // IDs d'extension détectés dynamiquement (sera rempli au runtime lors de la détection)
+            detectedIds: [],
 
             // Mots-clés à rechercher dans le contenu texte
             textKeywords: ['crowdly.sh/', 'AI Magic'],
-
-            // Fichiers d'extension à vérifier avec validation de contenu
-            files: {
-                'src/styles.css': [
-                    '#page-question-preview',
-                    '#page-mod-quiz-edit'
-                ],
-                'manifest.json': [
-                    '"name"',
-                    '"version"'
-                ]
-            },
 
             // Motifs d'attributs HTML
             patterns: {
@@ -118,25 +103,92 @@ define([], function() {
      */
     var getAllExtensions = function() {
         return Object.keys(EXTENSIONS).map(function(key) {
-            return Object.assign({ key: key }, EXTENSIONS[key]);
+            return Object.assign({key: key}, EXTENSIONS[key]);
         });
     };
 
     /**
-     * Obtient tous les IDs d'extension pour tous les navigateurs
+     * Obtient tous les IDs d'extension détectés dynamiquement
      * @function getExtensionId
      * @param {string} extensionKey - Clé de l'extension
-     * @returns {Object.<string, string>|null} Objet avec les IDs par navigateur ou null
+     * @returns {string[]|null} Tableau des IDs détectés ou null
      * @example
      * const ids = getExtensionId('crowdly');
-     * // { chrome: "abc123", edge: "abc123", firefox: "abc123" }
+     * // ["abc123", "xyz789"]
      * @since 1.0.0
+     * @deprecated Utiliser getAllExtensionIds à la place
      */
     var getExtensionId = function(extensionKey) {
-        var extension = getExtension(extensionKey);
-        if (!extension || !extension.extensionIds) return null;
+        return getAllExtensionIds(extensionKey);
+    };
 
-        return extension.extensionIds;
+    /**
+     * Obtient tous les IDs d'extension détectés dynamiquement
+     * @function getAllExtensionIds
+     * @param {string} extensionKey - Clé de l'extension
+     * @returns {string[]} Tableau de tous les IDs d'extension détectés
+     * @example
+     * const ids = getAllExtensionIds('crowdly');
+     * // ["abc123xyz", "def456ghi"]
+     * @since 1.0.0
+     */
+    var getAllExtensionIds = function(extensionKey) {
+        var extension = getExtension(extensionKey);
+        if (!extension) {
+            return [];
+        }
+
+        // Retourner uniquement les IDs détectés dynamiquement
+        return extension.detectedIds || [];
+    };
+
+    /**
+     * Ajoute un ID d'extension détecté dynamiquement
+     * @function addDetectedExtensionId
+     * @param {string} extensionKey - Clé de l'extension
+     * @param {string} extensionId - ID d'extension à ajouter
+     * @returns {boolean} True si l'ID a été ajouté avec succès
+     * @example
+     * addDetectedExtensionId('crowdly', 'abc123xyz');
+     * @since 1.0.0
+     */
+    var addDetectedExtensionId = function(extensionKey, extensionId) {
+        var extension = getExtension(extensionKey);
+        if (!extension) {
+            return false;
+        }
+
+        if (!extension.detectedIds) {
+            extension.detectedIds = [];
+        }
+
+        // Éviter les doublons
+        if (extension.detectedIds.indexOf(extensionId) === -1) {
+            extension.detectedIds.push(extensionId);
+            if (SETTINGS.enableLogging) {
+                // eslint-disable-next-line no-console
+                console.log('🧩 Extension Detector: ID d\'extension ajouté pour ' +
+                    extensionKey + ' : ' + extensionId);
+            }
+            return true;
+        }
+
+        return false;
+    };
+
+    /**
+     * Vérifie si un ID d'extension appartient à une extension configurée
+     * @function matchesExtensionId
+     * @param {string} extensionKey - Clé de l'extension
+     * @param {string} extensionId - ID d'extension à vérifier
+     * @returns {boolean} True si l'ID correspond à l'extension
+     * @example
+     * matchesExtensionId('crowdly', 'abc123xyz');
+     * @since 1.0.0
+     */
+    var matchesExtensionId = function(extensionKey, extensionId) {
+        var allIds = getAllExtensionIds(extensionKey);
+        return allIds.indexOf(extensionId) !== -1;
     };
 
     // API publique
@@ -146,6 +198,9 @@ define([], function() {
         EXTENSION_URL_REGEX: EXTENSION_URL_REGEX,
         getExtension: getExtension,
         getAllExtensions: getAllExtensions,
-        getExtensionId: getExtensionId
+        getExtensionId: getExtensionId,
+        getAllExtensionIds: getAllExtensionIds,
+        addDetectedExtensionId: addDetectedExtensionId,
+        matchesExtensionId: matchesExtensionId
     };
 });

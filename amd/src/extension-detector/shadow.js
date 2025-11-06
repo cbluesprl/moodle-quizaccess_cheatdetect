@@ -7,9 +7,8 @@
  */
 
 define([
-    'quizaccess_cheatdetect/extension-detector/config',
-    'quizaccess_cheatdetect/shared/utils'
-], function(Config, SharedUtils) {
+    'quizaccess_cheatdetect/extension-detector/config'
+], function(Config) {
     'use strict';
 
     /**
@@ -37,9 +36,11 @@ define([
      */
     var ShadowMonitor = function(onDetected) {
         this.onDetected = onDetected;
+        this.onExtensionIdDetected = null; // Callback pour la détection d'ID
         this.observers = new Map();
         this.processedShadowRoots = new WeakSet();
         this.detectedExtensions = new Set();
+        this.detectedExtensionIds = new Set(); // Pour éviter les détections dupliquées d'IDs
         this.isActive = false;
         this.scanInterval = null;
         this.metricsManager = null;
@@ -65,6 +66,21 @@ define([
     };
 
     /**
+     * Définit le callback pour la détection d'ID d'extension
+     * @memberof ShadowMonitor
+     * @function setExtensionIdDetectedCallback
+     * @param {Function} callback - Callback appelé lors de la détection d'un ID d'extension
+     * @example
+     * monitor.setExtensionIdDetectedCallback((extensionKey, extensionId, extensionPath) => {
+     *   console.log('ID détecté:', extensionId);
+     * });
+     * @since 1.0.0
+     */
+    ShadowMonitor.prototype.setExtensionIdDetectedCallback = function(callback) {
+        this.onExtensionIdDetected = callback;
+    };
+
+    /**
      * Démarre la surveillance du DOM et Shadow DOM
      * @memberof ShadowMonitor
      * @function start
@@ -85,6 +101,7 @@ define([
             this._createObserver();
             this._startPeriodicScan();
         } catch (error) {
+            // eslint-disable-next-line no-console
             console.error('🧩 Extension Detector: Échec du démarrage de la surveillance', error);
             this.isActive = false;
         }
@@ -101,7 +118,9 @@ define([
         var self = this;
 
         this.scanInterval = setInterval(function() {
-            if (!self.isActive) return;
+            if (!self.isActive) {
+                return;
+            }
             self._scanAllElements();
         }, 1000);
     };
@@ -128,6 +147,7 @@ define([
             }
         } catch (error) {
             if (Config.SETTINGS.enableLogging) {
+                // eslint-disable-next-line no-console
                 console.warn('🧩 Extension Detector: Erreur pendant le scan périodique', error);
             }
         }
@@ -144,7 +164,9 @@ define([
         var self = this;
 
         var observer = new MutationObserver(function(mutations) {
-            if (!self.isActive) return;
+            if (!self.isActive) {
+                return;
+            }
 
             mutations.forEach(function(mutation) {
                 if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
@@ -189,21 +211,22 @@ define([
      * @memberof ShadowMonitor
      * @function _checkAndProcessElement
      * @param {Element} element - Élément à vérifier
-     * @param {string} source - Source de la détection
      * @returns {boolean} True si une extension a été détectée
      * @private
      * @since 1.0.0
      */
-    ShadowMonitor.prototype._checkAndProcessElement = function(element, source) {
-        if (!element) return false;
+    ShadowMonitor.prototype._checkAndProcessElement = function(element) {
+        if (!element) {
+            return false;
+        }
 
         var extensions = Config.getAllExtensions();
 
         for (var i = 0; i < extensions.length; i++) {
             var extension = extensions[i];
 
-            if (this._detectExtensionElement(element, extension, source)) {
-                this._processDetectedElement(extension.key, element, source);
+            if (this._detectExtensionElement(element, extension)) {
+                this._processDetectedElement(extension.key, element);
                 return true;
             }
         }
@@ -217,13 +240,14 @@ define([
      * @function _detectExtensionElement
      * @param {Element} element - Élément à analyser
      * @param {Object} extension - Configuration de l'extension
-     * @param {string} source - Source de la détection
      * @returns {boolean} True si l'élément appartient à l'extension
      * @private
      * @since 1.0.0
      */
-    ShadowMonitor.prototype._detectExtensionElement = function(element, extension, source) {
-        if (!extension) return false;
+    ShadowMonitor.prototype._detectExtensionElement = function(element, extension) {
+        if (!extension) {
+            return false;
+        }
 
         // SÉCURITÉ: Ne jamais essayer de supprimer des éléments critiques
         if (element === document.body || element === document.documentElement ||
@@ -231,38 +255,50 @@ define([
             return false;
         }
 
-        // Stratégies de détection
-        if (this._containsSpecificExtensionId(element, extension)) {
+        // 1. Vérifier d'abord par ID d'extension (statique ou dynamique)
+        if (this._containsAnyExtensionId(element, extension)) {
             return true;
         }
+
+        // 2. Détecter par keywords/id/class et extraire l'ID d'extension si trouvé
+        var detectedByPattern = false;
 
         if (extension.textKeywords && element.textContent) {
             for (var k = 0; k < extension.textKeywords.length; k++) {
                 var keyword = extension.textKeywords[k];
                 if (element.textContent.includes(keyword)) {
-                    return true;
+                    detectedByPattern = true;
+                    break;
                 }
             }
         }
 
-        if (extension.patterns.ids && element.id) {
+        if (!detectedByPattern && extension.patterns.ids && element.id) {
             var elementId = element.id.toLowerCase();
             for (var j = 0; j < extension.patterns.ids.length; j++) {
                 var pattern = extension.patterns.ids[j].toLowerCase();
                 if (elementId.includes(pattern)) {
-                    return true;
+                    detectedByPattern = true;
+                    break;
                 }
             }
         }
 
-        if (extension.patterns.classes && element.className) {
+        if (!detectedByPattern && extension.patterns.classes && element.className) {
             var className = element.className.toLowerCase();
             for (var i = 0; i < extension.patterns.classes.length; i++) {
                 var pattern = extension.patterns.classes[i].toLowerCase();
                 if (className.includes(pattern)) {
-                    return true;
+                    detectedByPattern = true;
+                    break;
                 }
             }
+        }
+
+        // Si détecté par pattern, essayer d'extraire l'ID d'extension
+        if (detectedByPattern) {
+            this._extractAndStoreExtensionId(element, extension);
+            return true;
         }
 
         return false;
@@ -274,21 +310,21 @@ define([
      * @function _processDetectedElement
      * @param {string} extensionKey - Clé de l'extension
      * @param {Element} element - Élément détecté
-     * @param {string} source - Source de la détection
      * @private
      * @since 1.0.0
      */
-    ShadowMonitor.prototype._processDetectedElement = function(extensionKey, element, source) {
+    ShadowMonitor.prototype._processDetectedElement = function(extensionKey, element) {
         this.metricsState.totalDetections++;
 
         // Extraire les informations de l'élément
-        var elementInfo = this._extractElementInfo(element, source);
+        var elementInfo = this._extractElementInfo(element);
 
         // Logger la détection (TOUJOURS)
         if (this.metricsManager) {
             this.metricsManager.logDetectedElement(extensionKey, elementInfo);
 
             if (Config.SETTINGS.enableLogging) {
+
                 console.log('🧩 Extension Detector: 🚨 ' + extensionKey + ' : élément détecté', elementInfo);
             }
         }
@@ -299,11 +335,14 @@ define([
 
             if (removed) {
                 if (Config.SETTINGS.enableLogging) {
-                    console.log('🧩 Extension Detector: ✅ ' + extensionKey + ' : élément supprimé', elementInfo);
+
+                    // Console.log('🧩 Extension Detector: ✅ ' + extensionKey + ' : élément supprimé', elementInfo);
                 }
             } else {
                 if (Config.SETTINGS.enableLogging) {
-                    console.log('🧩 Extension Detector: ❌ ' + extensionKey + ' - échec de suppression d\'élément', elementInfo);
+                    // eslint-disable-next-line no-console
+                    console.log('🧩 Extension Detector: ❌ ' + extensionKey +
+                        ' - échec de suppression d\'élément', elementInfo);
                 }
             }
         }
@@ -314,7 +353,7 @@ define([
             this.detectedExtensions.add(extensionKey);
             if (this.onDetected) {
                 var extensionConfig = Config.getExtension(extensionKey);
-                this.onDetected(extensionKey, extensionConfig, source);
+                this.onDetected(extensionKey, extensionConfig, 'DOM detection');
             }
         }
     };
@@ -324,24 +363,25 @@ define([
      * @memberof ShadowMonitor
      * @function _extractElementInfo
      * @param {Element} element - Élément à analyser
-     * @param {string} source - Source de la détection
      * @returns {ElementInfo} Informations extraites de l'élément
      * @private
      * @since 1.0.0
      */
-    ShadowMonitor.prototype._extractElementInfo = function(element, source) {
+    ShadowMonitor.prototype._extractElementInfo = function(element) {
         var method = '';
 
         // Déterminer la méthode basée sur ce qui a déclenché la détection
         var extensions = Config.getAllExtensions();
         for (var i = 0; i < extensions.length; i++) {
             var extension = extensions[i];
-            if (this._containsSpecificExtensionId(element, extension)) {
-                //Extraire juste l'ID d'extension trouvé dans l'élément
+            if (this._containsAnyExtensionId(element, extension)) {
+                // Extraire juste l'ID d'extension trouvé dans l'élément
                 var outerHTML = element.outerHTML;
-                var match = outerHTML.match(Config.EXTENSION_URL_REGEX);
+                var shadowHTML = element.shadowRoot ? element.shadowRoot.innerHTML : '';
+                var combinedHTML = outerHTML + shadowHTML;
+                var match = combinedHTML.match(Config.EXTENSION_URL_REGEX);
                 if (match && match[2]) {
-                    method = 'Extension de navigateur trouvée par son ID : ' + match[2];
+                    method = 'Extension de navigateur trouvée par son extension ID : ' + match[2];
                 } else {
                     method = 'Extension de navigateur trouvée';
                 }
@@ -355,9 +395,10 @@ define([
                         break;
                     }
                 }
-                if (found) break;
-            }
-            else if (extension.patterns.ids && element.id) {
+                if (found) {
+                    break;
+                }
+            } else if (extension.patterns.ids && element.id) {
                 var elementId = element.id.toLowerCase();
                 for (var j = 0; j < extension.patterns.ids.length; j++) {
                     var pattern = extension.patterns.ids[j].toLowerCase();
@@ -367,9 +408,10 @@ define([
                         break;
                     }
                 }
-                if (found) break;
-            }
-            else if (extension.patterns.classes && element.className) {
+                if (found) {
+                    break;
+                }
+            } else if (extension.patterns.classes && element.className) {
                 var className = element.className.toLowerCase();
                 for (var k = 0; k < extension.patterns.classes.length; k++) {
                     var pattern = extension.patterns.classes[k].toLowerCase();
@@ -379,7 +421,9 @@ define([
                         break;
                     }
                 }
-                if (found) break;
+                if (found) {
+                    break;
+                }
             }
         }
 
@@ -424,35 +468,96 @@ define([
     };
 
     /**
-     * Vérifie l'ID d'extension avec regex multi-navigateur
+     * Vérifie si l'élément contient un ID d'extension (statique ou dynamique)
+     * @memberof ShadowMonitor
+     * @function _containsAnyExtensionId
+     * @param {Element} element - Élément à vérifier
+     * @param {Object} extension - Configuration de l'extension
+     * @returns {boolean} True si un ID d'extension est trouvé
+     * @private
+     * @since 1.0.0
+     */
+    ShadowMonitor.prototype._containsAnyExtensionId = function(element, extension) {
+        var allIds = Config.getAllExtensionIds(extension.key);
+        if (!allIds || allIds.length === 0) {
+            return false;
+        }
+
+        var outerHTML = element.outerHTML;
+        var shadowHTML = element.shadowRoot ? element.shadowRoot.innerHTML : '';
+        var combinedHTML = outerHTML + shadowHTML;
+
+        // Vérifier avec la regex pour détecter les URLs d'extension
+        var match = combinedHTML.match(Config.EXTENSION_URL_REGEX);
+        if (!match) {
+            return false;
+        }
+
+        var foundExtensionId = match[2]; // L'ID extrait de la regex
+
+        // Vérifier si l'ID trouvé correspond à un des IDs configurés (statiques ou dynamiques)
+        return allIds.indexOf(foundExtensionId) !== -1;
+    };
+
+    /**
+     * Extrait l'ID d'extension du contenu d'un élément et le stocke
+     * @memberof ShadowMonitor
+     * @function _extractAndStoreExtensionId
+     * @param {Element} element - Élément à analyser
+     * @param {Object} extension - Configuration de l'extension
+     * @private
+     * @since 1.0.0
+     */
+    ShadowMonitor.prototype._extractAndStoreExtensionId = function(element, extension) {
+        var outerHTML = element.outerHTML;
+        var shadowHTML = element.shadowRoot ? element.shadowRoot.innerHTML : '';
+        var combinedHTML = outerHTML + shadowHTML;
+
+        // Chercher toutes les occurrences d'URLs d'extension
+        var regex = new RegExp(Config.EXTENSION_URL_REGEX, 'g');
+        var match;
+
+        while ((match = regex.exec(combinedHTML)) !== null) {
+            var extensionProtocol = match[1]; // chrome-extension:// ou moz-extension://
+            var extensionId = match[2];
+            var extensionPath = extensionProtocol + extensionId;
+
+            // Éviter de traiter plusieurs fois le même ID
+            if (this.detectedExtensionIds.has(extensionPath)) {
+                continue;
+            }
+
+            this.detectedExtensionIds.add(extensionPath);
+
+            // Ajouter l'ID à la configuration
+            var added = Config.addDetectedExtensionId(extension.key, extensionId);
+
+            if (added && Config.SETTINGS.enableLogging) {
+                // eslint-disable-next-line no-console
+                console.log('🧩 Extension Detector: Nouvel ID d\'extension extrait pour ' +
+                    extension.name + ' : ' + extensionId);
+            }
+
+            // Notifier le détecteur principal pour supprimer tous les éléments avec cet ID
+            if (this.onExtensionIdDetected && added) {
+                this.onExtensionIdDetected(extension.key, extensionId);
+            }
+        }
+    };
+
+    /**
+     * Vérifie l'ID d'extension avec regex multi-navigateur (legacy)
      * @memberof ShadowMonitor
      * @function _containsSpecificExtensionId
      * @param {Element} element - Élément à vérifier
      * @param {Object} extension - Configuration de l'extension
      * @returns {boolean} True si l'ID d'extension est trouvé
      * @private
+     * @deprecated Utiliser _containsAnyExtensionId à la place
      * @since 1.0.0
      */
     ShadowMonitor.prototype._containsSpecificExtensionId = function(element, extension) {
-        var extensionIds = Config.getExtensionId(extension.key);
-        if (!extensionIds) return false;
-
-        var outerHTML = element.outerHTML;
-
-        // Vérifier avec la regex pour détecter les URLs d'extension
-        var match = outerHTML.match(Config.EXTENSION_URL_REGEX);
-        if (!match) return false;
-
-        var foundExtensionId = match[2]; // L'ID extrait de la regex
-
-        // Vérifier si l'ID trouvé correspond à un des IDs configurés
-        for (var browser in extensionIds) {
-            if (extensionIds[browser] === foundExtensionId) {
-                return true;
-            }
-        }
-
-        return false;
+        return this._containsAnyExtensionId(element, extension);
     };
 
     /**
@@ -465,7 +570,9 @@ define([
      */
     ShadowMonitor.prototype._handleShadowRoot = function(element) {
         var shadowRoot = element.shadowRoot;
-        if (this.processedShadowRoots.has(shadowRoot)) return;
+        if (this.processedShadowRoots.has(shadowRoot)) {
+            return;
+        }
 
         this.processedShadowRoots.add(shadowRoot);
         this._observeShadowRoot(shadowRoot);
@@ -481,11 +588,15 @@ define([
      * @since 1.0.0
      */
     ShadowMonitor.prototype._observeShadowRoot = function(shadowRoot) {
-        if (this.observers.has(shadowRoot)) return;
+        if (this.observers.has(shadowRoot)) {
+            return;
+        }
 
         var self = this;
         var shadowObserver = new MutationObserver(function(mutations) {
-            if (!self.isActive) return;
+            if (!self.isActive) {
+                return;
+            }
 
             mutations.forEach(function(mutation) {
                 if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
@@ -535,7 +646,9 @@ define([
      * @since 1.0.0
      */
     ShadowMonitor.prototype.stop = function() {
-        if (!this.isActive) return;
+        if (!this.isActive) {
+            return;
+        }
 
         this.isActive = false;
 
@@ -578,6 +691,7 @@ define([
      */
     ShadowMonitor.prototype.reset = function() {
         this.detectedExtensions.clear();
+        this.detectedExtensionIds.clear();
         this.metricsState = {
             hasDetectedElements: false,
             totalDetections: 0
