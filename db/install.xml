@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<XMLDB PATH="mod/quiz/accessrule/cheatdetect/db" VERSION="2025103001" COMMENT="Defines tables for quizaccess_cheatdetect">
+<XMLDB PATH="mod/quiz/accessrule/cheatdetect/db" VERSION="2025103003" COMMENT="Defines tables for quizaccess_cheatdetect">
     <TABLES>
-        <TABLE NAME="quizaccess_cheatdetect_sess" COMMENT="Stores quiz attempt sessions with focus tracking">
+        <TABLE NAME="quizaccess_cheatdetect_events" COMMENT="Stores raw quiz attempt events for audit trail">
             <FIELDS>
                 <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-                <FIELD NAME="session_id" TYPE="char" LENGTH="255" NOTNULL="true"/>
                 <FIELD NAME="attemptid" TYPE="int" LENGTH="10" NOTNULL="true"/>
                 <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
                 <FIELD NAME="quizid" TYPE="int" LENGTH="10" NOTNULL="true"/>
                 <FIELD NAME="slot" TYPE="int" LENGTH="10" NOTNULL="false"/>
-                <FIELD NAME="duration" TYPE="int" LENGTH="10" NOTNULL="true"/>
+                <FIELD NAME="session_id" TYPE="char" LENGTH="255" NOTNULL="true"/>
+                <FIELD NAME="timestamp" TYPE="int" LENGTH="20" NOTNULL="true"/>
+                <FIELD NAME="action" TYPE="char" LENGTH="50" NOTNULL="true"/>
+                <FIELD NAME="data_json" TYPE="text" NOTNULL="false"/>
                 <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
             </FIELDS>
             <KEYS>
@@ -18,22 +20,62 @@
             <INDEXES>
                 <INDEX NAME="attemptid_idx" UNIQUE="false" FIELDS="attemptid"/>
                 <INDEX NAME="userid_idx" UNIQUE="false" FIELDS="userid"/>
-                <INDEX NAME="quizid_idx" UNIQUE="false" FIELDS="quizid"/>
                 <INDEX NAME="slot_idx" UNIQUE="false" FIELDS="slot"/>
+                <INDEX NAME="session_idx" UNIQUE="false" FIELDS="session_id"/>
+                <INDEX NAME="action_idx" UNIQUE="false" FIELDS="action"/>
+                <INDEX NAME="timestamp_idx" UNIQUE="false" FIELDS="timestamp"/>
             </INDEXES>
         </TABLE>
 
-        <TABLE NAME="quizaccess_cheatdetect_data" COMMENT="Stores JSON data associated with sessions">
+        <TABLE NAME="quizaccess_cheatdetect_metrics" COMMENT="Stores aggregated metrics per slot or per attempt">
             <FIELDS>
                 <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-                <FIELD NAME="sessionid" TYPE="int" LENGTH="10" NOTNULL="true"/>
-                <FIELD NAME="data" TYPE="text" NOTNULL="true" COMMENT="Stores JSON"/>
+                <FIELD NAME="attemptid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+                <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+                <FIELD NAME="quizid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+                <FIELD NAME="slot" TYPE="int" LENGTH="10" NOTNULL="false"/>
+                <FIELD NAME="time_total" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+                <FIELD NAME="time_focused" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+                <FIELD NAME="time_unfocused" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+                <FIELD NAME="copy_count" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+                <FIELD NAME="focus_loss_count" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+                <FIELD NAME="extension_count" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+                <FIELD NAME="last_event_timestamp" TYPE="int" LENGTH="20" NOTNULL="false"/>
+                <FIELD NAME="current_state" TYPE="char" LENGTH="20" NOTNULL="false"/>
+                <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
+                <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true"/>
             </FIELDS>
             <KEYS>
                 <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+                <KEY NAME="unique_attempt_slot" TYPE="unique" FIELDS="attemptid,slot"/>
             </KEYS>
             <INDEXES>
-                <INDEX NAME="sessionid_idx" UNIQUE="false" FIELDS="sessionid"/>
+                <INDEX NAME="attemptid_idx" UNIQUE="false" FIELDS="attemptid"/>
+                <INDEX NAME="userid_idx" UNIQUE="false" FIELDS="userid"/>
+                <INDEX NAME="quizid_idx" UNIQUE="false" FIELDS="quizid"/>
+            </INDEXES>
+        </TABLE>
+
+        <TABLE NAME="quizaccess_cheatdetect_extensions" COMMENT="Stores detected browser extensions">
+            <FIELDS>
+                <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+                <FIELD NAME="attemptid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+                <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+                <FIELD NAME="quizid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+                <FIELD NAME="slot" TYPE="int" LENGTH="10" NOTNULL="false"/>
+                <FIELD NAME="extension_key" TYPE="char" LENGTH="100" NOTNULL="true"/>
+                <FIELD NAME="extension_name" TYPE="char" LENGTH="255" NOTNULL="true"/>
+                <FIELD NAME="extension_uid" TYPE="char" LENGTH="255" NOTNULL="true"/>
+                <FIELD NAME="detection_data" TYPE="text" NOTNULL="false"/>
+                <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
+            </FIELDS>
+            <KEYS>
+                <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+                <KEY NAME="unique_detection" TYPE="unique" FIELDS="attemptid,extension_uid"/>
+            </KEYS>
+            <INDEXES>
+                <INDEX NAME="attemptid_idx" UNIQUE="false" FIELDS="attemptid"/>
+                <INDEX NAME="extension_idx" UNIQUE="false" FIELDS="extension_key"/>
             </INDEXES>
         </TABLE>
     </TABLES>
