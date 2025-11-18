@@ -16,231 +16,162 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Helper class for quizaccess_cheatdetect.
+ * Helper class for cheat detection queries.
  *
+ * @package    quizaccess_cheatdetect
  * @copyright  2025 CBlue SRL <support@cblue.be>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace quizaccess_cheatdetect;
 
-defined('MOODLE_INTERNAL') || exit();
+use quizaccess_cheatdetect\persistent\metric;
+use quizaccess_cheatdetect\persistent\extension;
 
-use dml_exception;
-use quizaccess_cheatdetect\persistent\session;
-use quizaccess_cheatdetect\persistent\session_data;
-use stdClass;
+defined('MOODLE_INTERNAL') || die();
 
-class helper
-{
-    /**
-     * @param  int  $attemptid
-     * @param  array  $options
-     * @return array
-     *
-     * @throws dml_exception
-     */
-    public static function get_attempt_sessions(int $attemptid, array $options = []): array
-    {
-        global $DB;
-
-        $where = ['attemptid = :attemptid'];
-        $params = ['attemptid' => $attemptid];
-
-        if (! empty($options['timestart'])) {
-            $where[] = 'timecreated >= :timestart';
-            $params['timestart'] = $options['timestart'];
-        }
-
-        if (! empty($options['timeend'])) {
-            $where[] = 'timecreated <= :timeend';
-            $params['timeend'] = $options['timeend'];
-        }
-
-        if (! empty($options['slot'])) {
-            $where[] = 'slot = :slot';
-            $params['slot'] = $options['slot'];
-        }
-
-        $wherestr = implode(' AND ', $where);
-
-        return $DB->get_records_sql(
-            'SELECT * FROM {'.session::TABLE.'} WHERE ' . $wherestr . ' ORDER BY timecreated DESC',
-            $params
-        );
-    }
+/**
+ * Helper class for querying cheat detection data.
+ */
+class helper {
 
     /**
-     * @param  int  $quizid
-     * @param  array  $options
-     * @return array
+     * Get metric data for a specific attempt and slot.
      *
-     * @throws dml_exception
+     * @param int $attemptid The attempt ID
+     * @param int $slot The question slot number
+     * @return metric|null The metric object or null if not found
      */
-    public static function get_quiz_sessions(int $quizid, array $options = []): array
-    {
+    public static function get_slot_metric(int $attemptid, int $slot): ?metric {
         global $DB;
 
-        $where = ['quizid = :quizid'];
-        $params = ['quizid' => $quizid];
+        $record = $DB->get_record(metric::TABLE, [
+            'attemptid' => $attemptid,
+            'slot' => $slot
+        ]);
 
-        if (! empty($options['timestart'])) {
-            $where[] = 'timecreated >= :timestart';
-            $params['timestart'] = $options['timestart'];
-        }
-
-        if (! empty($options['timeend'])) {
-            $where[] = 'timecreated <= :timeend';
-            $params['timeend'] = $options['timeend'];
-        }
-
-        if (! empty($options['userid'])) {
-            $where[] = 'userid = :userid';
-            $params['userid'] = $options['userid'];
-        }
-
-        if (! empty($options['slot'])) {
-            $where[] = 'slot = :slot';
-            $params['slot'] = $options['slot'];
-        }
-
-        $wherestr = implode(' AND ', $where);
-
-        return $DB->get_records_sql(
-            'SELECT * FROM {'.session::TABLE.'} WHERE ' . $wherestr . ' ORDER BY timecreated DESC',
-            $params
-        );
-    }
-
-    /**
-     * @param  int  $sessionid
-     * @return stdClass|null
-     *
-     * @throws dml_exception
-     */
-    public static function get_session_with_data(int $sessionid): ?stdClass
-    {
-        global $DB;
-
-        $session = $DB->get_record(session::TABLE, ['id' => $sessionid]);
-
-        if (! $session) {
+        if (!$record) {
             return null;
         }
 
-        $sessiondata = $DB->get_record(session_data::TABLE, ['sessionid' => $sessionid]);
-
-        if ($sessiondata && ! empty($sessiondata->data)) {
-            $session->data = json_decode($sessiondata->data);
-        } else {
-            $session->data = null;
-        }
-
-        return $session;
+        return new metric(0, $record);
     }
 
     /**
-     * @param  int  $attemptid
-     * @param  array  $options
-     * @return stdClass
+     * Get total time spent on all slots for an attempt.
      *
-     * @throws dml_exception
+     * @param int $attemptid The attempt ID
+     * @return int Total time in seconds
      */
-    public static function get_attempt_summary(int $attemptid, array $options = []): stdClass
-    {
+    public static function get_total_attempt_time(int $attemptid): int {
         global $DB;
 
-        $params = ['attemptid' => $attemptid];
-        $where = ['attemptid = :attemptid'];
+        $sql = "SELECT SUM(time_total) as total_time
+                FROM {" . metric::TABLE . "}
+                WHERE attemptid = :attemptid";
 
-        if (! empty($options['timestart'])) {
-            $where[] = 'timecreated >= :timestart';
-            $params['timestart'] = $options['timestart'];
-        }
+        $result = $DB->get_record_sql($sql, ['attemptid' => $attemptid]);
 
-        if (! empty($options['timeend'])) {
-            $where[] = 'timecreated <= :timeend';
-            $params['timeend'] = $options['timeend'];
-        }
-
-        $wherestr = implode(' AND ', $where);
-
-        $sessionsql = '
-            SELECT
-                COUNT(*) as session_count,
-                SUM(duration) as total_duration,
-                AVG(duration) as avg_duration
-            FROM {'.session::TABLE.'}
-            WHERE ' . $wherestr;
-
-        $session = $DB->get_record_sql($sessionsql, $params);
-
-        $result = new stdClass;
-        $result->attemptid = $attemptid;
-        $result->session_count = $session->session_count ?? 0;
-        $result->total_duration = $session->total_duration ?? 0;
-        $result->avg_duration = $session->avg_duration ?? 0;
-
-        return $result;
+        return $result && $result->total_time ? (int)$result->total_time : 0;
     }
 
     /**
-     * @param  int  $quizid
-     * @param  array  $options
-     * @return array
+     * Check if any extension was detected for a specific attempt and slot.
      *
-     * @throws dml_exception
+     * @param int $attemptid The attempt ID
+     * @param int $slot The question slot number
+     * @return array Array of detected extensions with details
      */
-    public static function get_quiz_user_activity_summary(int $quizid, array $options = []): array
-    {
+    public static function get_slot_extensions(int $attemptid, int $slot): array {
         global $DB;
 
-        $params = ['quizid' => $quizid];
-        $where = ['quizid = :quizid'];
+        $records = $DB->get_records(extension::TABLE, [
+            'attemptid' => $attemptid,
+            'slot' => $slot
+        ]);
 
-        if (! empty($options['timestart'])) {
-            $where[] = 'timecreated >= :timestart';
-            $params['timestart'] = $options['timestart'];
+        $extensions = [];
+        foreach ($records as $record) {
+            $extensions[] = [
+                'key' => $record->extension_key,
+                'name' => $record->extension_name,
+                'uid' => $record->extension_uid,
+                'detected_at' => $record->timecreated
+            ];
         }
 
-        if (! empty($options['timeend'])) {
-            $where[] = 'timecreated <= :timeend';
-            $params['timeend'] = $options['timeend'];
-        }
+        return $extensions;
+    }
 
-        $wherestr = implode(' AND ', $where);
+    /**
+     * Get all metrics for an attempt.
+     *
+     * @param int $attemptid The attempt ID
+     * @return array Array of metric objects indexed by slot
+     */
+    public static function get_attempt_metrics(int $attemptid): array {
+        global $DB;
 
-        $sessionsql = '
-            SELECT
-                userid,
-                attemptid,
-                COUNT(*) as session_count,
-                SUM(duration) as total_duration
-            FROM {'.session::TABLE.'}
-            WHERE ' . $wherestr . '
-            GROUP BY userid, attemptid
-        ';
+        $records = $DB->get_records(metric::TABLE, ['attemptid' => $attemptid]);
 
-        $sessions = $DB->get_records_sql($sessionsql, $params);
-
-        $result = [];
-
-        foreach ($sessions as $session) {
-            $userid = $session->userid;
-            $attemptid = $session->attemptid;
-
-            if (! isset($result[$userid])) {
-                $result[$userid] = new stdClass;
-                $result[$userid]->userid = $userid;
-                $result[$userid]->attempts = [];
+        $metrics = [];
+        foreach ($records as $record) {
+            $metric = new metric(0, $record);
+            $slot = $metric->get('slot');
+            if ($slot !== null) {
+                $metrics[$slot] = $metric;
             }
-
-            $result[$userid]->attempts[$attemptid] = new stdClass;
-            $result[$userid]->attempts[$attemptid]->attemptid = $attemptid;
-            $result[$userid]->attempts[$attemptid]->session_count = $session->session_count;
-            $result[$userid]->attempts[$attemptid]->total_duration = $session->total_duration;
         }
 
-        return $result;
+        return $metrics;
+    }
+
+    /**
+     * Check if any extension was detected for an attempt (any slot).
+     *
+     * @param int $attemptid The attempt ID
+     * @return bool True if at least one extension was detected
+     */
+    public static function has_extensions(int $attemptid): bool {
+        global $DB;
+
+        return $DB->record_exists(extension::TABLE, ['attemptid' => $attemptid]);
+    }
+
+    /**
+     * Get summary statistics for an attempt.
+     *
+     * @param int $attemptid The attempt ID
+     * @return array Summary with total_time, slot_count, avg_time, etc.
+     */
+    public static function get_attempt_summary(int $attemptid): array {
+        global $DB;
+
+        $sql = "SELECT
+                    COUNT(*) as slot_count,
+                    SUM(time_total) as total_time,
+                    SUM(copy_count) as total_copies,
+                    SUM(focus_loss_count) as total_focus_losses,
+                    SUM(extension_count) as total_extensions
+                FROM {" . metric::TABLE . "}
+                WHERE attemptid = :attemptid";
+
+        $result = $DB->get_record_sql($sql, ['attemptid' => $attemptid]);
+
+        $summary = [
+            'slot_count' => $result ? (int)$result->slot_count : 0,
+            'total_time' => $result ? (int)$result->total_time : 0,
+            'total_copies' => $result ? (int)$result->total_copies : 0,
+            'total_focus_losses' => $result ? (int)$result->total_focus_losses : 0,
+            'total_extensions' => $result ? (int)$result->total_extensions : 0,
+        ];
+
+        if ($summary['slot_count'] > 0) {
+            $summary['avg_time'] = (int)($summary['total_time'] / $summary['slot_count']);
+        } else {
+            $summary['avg_time'] = 0;
+        }
+
+        return $summary;
     }
 }

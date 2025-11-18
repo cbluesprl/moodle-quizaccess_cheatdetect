@@ -440,19 +440,11 @@ class SaveDataService extends Routes
     }
 
     /**
-     * @param $timestamp
+     * @param $timestamp unix JS timestamp
      * @return int
      */
     private static function convert_timestamp_to_seconds($timestamp): int
     {
-        if (is_string($timestamp)) {
-            $timestamp = (int) $timestamp;
-        }
-
-        if ($timestamp > self::TIMESTAMP_CONVERSION_FACTOR * time()) {
-            return (int) ($timestamp / self::TIMESTAMP_CONVERSION_FACTOR);
-        }
-
-        return $timestamp;
+        return (int) ($timestamp / self::TIMESTAMP_CONVERSION_FACTOR);
     }
 }

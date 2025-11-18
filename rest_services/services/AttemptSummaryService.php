@@ -23,13 +23,21 @@
 namespace quizaccess_cheatdetect\rest_services\services;
 
 use local_rest\Routes;
-use quizaccess_cheatdetect\helper;
 use stdClass;
+use quizaccess_cheatdetect\helper;
 
 defined('MOODLE_INTERNAL') || die();
 
 class AttemptSummaryService extends Routes
 {
+    /**
+     * Get summary for an entire attempt.
+     *
+     * @param stdClass|null $payload Request payload
+     * @param stdClass|null $route_params Route parameters
+     * @param stdClass|null $get_params GET parameters
+     * @return stdClass Response object
+     */
     public static function get_attempt_summary(?stdClass $payload, ?stdclass $route_params, ?stdclass $get_params): stdClass
     {
         $response = new stdClass();
@@ -43,9 +51,84 @@ class AttemptSummaryService extends Routes
             $attemptid = (int) $route_params->attemptid;
 
             $summary = helper::get_attempt_summary($attemptid);
+            $summary['has_extensions'] = helper::has_extensions($attemptid);
 
             $response->success = true;
             $response->data = $summary;
+        } catch (\Throwable $e) {
+            $response->error = $e->getMessage();
+        }
+
+        return $response;
+    }
+
+    /**
+     * Get summary for a specific slot in an attempt.
+     *
+     * @param stdClass|null $payload Request payload
+     * @param stdClass|null $route_params Route parameters (attemptid, slot)
+     * @param stdClass|null $get_params GET parameters
+     * @return stdClass Response object
+     */
+    public static function get_slot_summary(?stdClass $payload, ?stdclass $route_params, ?stdclass $get_params): stdClass
+    {
+        $response = new stdClass();
+        $response->success = false;
+
+        try {
+            if (empty($route_params->attemptid)) {
+                throw new \Exception('No attemptid provided');
+            }
+
+            if (!isset($route_params->slot)) {
+                throw new \Exception('No slot provided');
+            }
+
+            $attemptid = (int) $route_params->attemptid;
+            $slot = (int) $route_params->slot;
+
+            // Get metric for this specific slot.
+            $metric = helper::get_slot_metric($attemptid, $slot);
+
+            if (!$metric) {
+                // No data found for this slot.
+                $response->success = true;
+                $response->data = [
+                    'attemptid' => $attemptid,
+                    'slot' => $slot,
+                    'time_spent' => 0,
+                    'time_percentage' => 0,
+                    'copy_count' => 0,
+                    'focus_loss_count' => 0,
+                    'extensions_detected' => [],
+                    'has_extension' => false
+                ];
+                return $response;
+            }
+
+            // Get total attempt time for percentage calculation.
+            $total_time = helper::get_total_attempt_time($attemptid);
+
+            // Calculate percentage.
+            $time_spent = $metric->get('time_total');
+            $time_percentage = 0;
+            if ($total_time > 0) {
+                $time_percentage = round(($time_spent / $total_time) * 100, 2);
+            }
+
+            // Check for extensions.
+            $extensions = helper::get_slot_extensions($attemptid, $slot);
+            $response->success = true;
+            $response->data = [
+                'attemptid' => $attemptid,
+                'slot' => $slot,
+                'time_spent' => $time_spent,
+                'time_percentage' => $time_percentage,
+                'copy_count' => $metric->get('copy_count'),
+                'focus_loss_count' => $metric->get('focus_loss_count'),
+                'extensions_detected' => $extensions,
+                'has_extension' => !empty($extensions)
+            ];
         } catch (\Throwable $e) {
             $response->error = $e->getMessage();
         }

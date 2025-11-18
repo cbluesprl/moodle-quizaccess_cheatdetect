@@ -117,6 +117,11 @@ class quizaccess_cheatdetect extends quizaccess_cheat_detect_parent_class {
     public function setup_attempt_page($page) {
         global $PAGE, $USER;
 
+        // Check if we're on a quiz attempt page
+        $pagetype = $PAGE->pagetype;
+        if (strpos($pagetype, 'mod-quiz-attempt') !== 0) {
+            return;
+        }
         $attemptid = optional_param('attempt', 0, PARAM_INT);
         $slot = optional_param('slot', null, PARAM_INT);
 
