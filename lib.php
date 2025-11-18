@@ -17,11 +17,10 @@ function quizaccess_cheatdetect_before_footer() {
 
     // Check if we're on a quiz report page
     $pagetype = $PAGE->pagetype;
-    // Target: mod-quiz-report
-    if (strpos($pagetype, 'mod-quiz-report') !== 0) {
+    if (strpos($pagetype, 'mod-quiz-report') !== 0
+    && strpos($pagetype, 'mod-quiz-reviewquestion') !== 0) {
         return;
     }
-
     $context = $PAGE->context;
     if ($context->contextlevel != CONTEXT_MODULE) {
         return;
