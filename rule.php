@@ -115,7 +115,7 @@ class quizaccess_cheatdetect extends quizaccess_cheat_detect_parent_class {
      * @param moodle_page $page the page object
      */
     public function setup_attempt_page($page) {
-        global $PAGE, $USER;
+        global $DB, $PAGE, $USER;
 
         // Check if we're on a quiz attempt page
         $pagetype = $PAGE->pagetype;
@@ -123,12 +123,14 @@ class quizaccess_cheatdetect extends quizaccess_cheat_detect_parent_class {
             return;
         }
         $attemptid = optional_param('attempt', 0, PARAM_INT);
-        $slot = optional_param('slot', null, PARAM_INT);
+        $page = optional_param('page', null, PARAM_INT);
 
         $sessionId = session_id();
         if (empty($sessionId)) {
             $sessionId = md5(uniqid(rand(), true));
         }
+
+        $slot = $DB->get_field('quiz_slots', 'slot', ['quizid' => $this->quiz->id, 'page' => $page]);
 
         $params = [
             'sessionId' => $sessionId,
