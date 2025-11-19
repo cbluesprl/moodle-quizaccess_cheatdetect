@@ -135,4 +135,76 @@ class AttemptSummaryService extends Routes
 
         return $response;
     }
+
+    /**
+     * Get summaries for multiple attempts at once.
+     *
+     * @param stdClass|null $payload Request payload containing attemptids array
+     * @param stdClass|null $route_params Route parameters
+     * @param stdClass|null $get_params GET parameters
+     * @return stdClass Response object
+     */
+    public static function get_bulk_attempt_summaries(?stdClass $payload, ?stdclass $route_params, ?stdclass $get_params): stdClass
+    {
+        $response = new stdClass();
+        $response->success = false;
+
+        try {
+            if (empty($payload->attemptids) || !is_array($payload->attemptids)) {
+                throw new \Exception('No attemptids array provided');
+            }
+
+            $attemptids = array_map('intval', $payload->attemptids);
+            $results = [];
+
+            foreach ($attemptids as $attemptid) {
+                $summary = helper::get_attempt_summary($attemptid);
+                $summary['has_extensions'] = helper::has_extensions($attemptid);
+
+                $total_time = helper::get_total_attempt_time($attemptid);
+
+                $metrics = helper::get_attempt_metrics($attemptid);
+
+                // Build slots array.
+                $slots = [];
+                foreach ($metrics as $slot => $metric) {
+                    $time_spent = $metric->get('time_total');
+                    $time_percentage = 0;
+                    if ($total_time > 0) {
+                        $time_percentage = round(($time_spent / $total_time) * 100, 2);
+                    }
+
+                    $extensions = helper::get_slot_extensions($attemptid, $slot);
+
+                    $slots[] = [
+                        'slot' => $slot,
+                        'time_spent' => $time_spent,
+                        'time_percentage' => $time_percentage,
+                        'copy_count' => $metric->get('copy_count'),
+                        'focus_loss_count' => $metric->get('focus_loss_count'),
+                        'extensions_detected' => $extensions,
+                        'has_extension' => !empty($extensions)
+                    ];
+                }
+
+                // Sort slots by slot number.
+                usort($slots, function($a, $b) {
+                    return $a['slot'] - $b['slot'];
+                });
+
+                $results[] = [
+                    'attemptid' => $attemptid,
+                    'summary' => $summary,
+                    'slots' => $slots
+                ];
+            }
+
+            $response->success = true;
+            $response->data = $results;
+        } catch (\Throwable $e) {
+            $response->error = $e->getMessage();
+        }
+
+        return $response;
+    }
 }

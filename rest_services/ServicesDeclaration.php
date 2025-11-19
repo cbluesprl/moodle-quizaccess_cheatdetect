@@ -39,5 +39,6 @@ class ServicesDeclaration extends Routes
         $this->register_service('POST', '/save-data', $CFG->dirroot . '/mod/quiz/accessrule/cheatdetect/rest_services/services/SaveDataService.php', 'quizaccess_cheatdetect\rest_services\services\SaveDataService', 'save_data', 'SessionMiddleware');
         $this->register_service('GET', '/attempt-summary/{attemptid}', $CFG->dirroot . '/mod/quiz/accessrule/cheatdetect/rest_services/services/AttemptSummaryService.php', 'quizaccess_cheatdetect\rest_services\services\AttemptSummaryService', 'get_attempt_summary', 'SessionMiddleware');
         $this->register_service('GET', '/attempt-summary/{attemptid}/slots/{slot}', $CFG->dirroot . '/mod/quiz/accessrule/cheatdetect/rest_services/services/AttemptSummaryService.php', 'quizaccess_cheatdetect\rest_services\services\AttemptSummaryService', 'get_slot_summary', 'SessionMiddleware');
+        $this->register_service('POST', '/bulk-attempt-summaries', $CFG->dirroot . '/mod/quiz/accessrule/cheatdetect/rest_services/services/AttemptSummaryService.php', 'quizaccess_cheatdetect\rest_services\services\AttemptSummaryService', 'get_bulk_attempt_summaries', 'SessionMiddleware');
     }
 }

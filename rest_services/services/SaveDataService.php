@@ -162,9 +162,7 @@ class SaveDataService extends Routes
         $metric->set('timemodified', time());
 
         $metric->save();
-
-        self::update_global_metric($context, 'copy_count', 1);
-    }
+     }
 
     /**
      * @param $event_data
