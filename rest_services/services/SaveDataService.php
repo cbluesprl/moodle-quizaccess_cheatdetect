@@ -27,7 +27,6 @@ class SaveDataService extends Routes
     public static function save_data(?stdClass $payload, ?stdclass $route_params, ?stdclass $get_params): stdClass
     {
         global $DB;
-
         $response = new stdClass();
         $response->success = false;
 
@@ -40,7 +39,7 @@ class SaveDataService extends Routes
             $attemptid = $payload->attemptid ?? null;
             $userid = $payload->userid ?? null;
             $quizid = $payload->quizid ?? null;
-            $slot = $payload->slot ?? null;
+            $slot = ($payload->slot === false) ? null : ($payload->slot ?? null); // parfois slot est false, ça fait bugguer la suite
             $events = $payload->events ?? [];
 
             if (empty($session_id) || empty($attemptid) || empty($userid) || empty($quizid)) {
@@ -99,7 +98,6 @@ class SaveDataService extends Routes
         if (empty($action) || empty($timestamp)) {
             return;
         }
-
         $timestamp_seconds = self::convert_timestamp_to_seconds($timestamp);
 
         self::save_raw_event($event_data, $context, $timestamp_seconds);
@@ -129,7 +127,6 @@ class SaveDataService extends Routes
         if (!empty($event_data->data)) {
             $event_record->set('data_json', json_encode($event_data->data));
         }
-
         $event_record->create();
     }
 
@@ -440,7 +437,7 @@ class SaveDataService extends Routes
     }
 
     /**
-     * @param $timestamp unix JS timestamp
+     * @param $timestamp JS timestamp
      * @return int
      */
     private static function convert_timestamp_to_seconds($timestamp): int
