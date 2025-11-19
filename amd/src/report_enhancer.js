@@ -21,8 +21,12 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
         config = params;
         // Wait for DOM to be ready
         $(document).ready(function() {
-            enhanceReportTable();
-            enhanceReviewQuestionPage();
+            // Check if we are on the review question page
+            if (window.location.pathname.indexOf('reviewquestion.php') !== -1) {
+                enhanceReviewQuestionPage();
+            } else {
+                enhanceReportTable();
+            }
         });
     };
 
