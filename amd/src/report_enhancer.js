@@ -31,6 +31,251 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
     };
 
     /**
+     * Add data-cblue-attempt attribute to each row in the attempts table
+     * @returns {Array} Array of attempt IDs found in the table
+     */
+    var addAttemptDataAttributes = function() {
+        // Find the attempts table
+        var $attemptsTable = $('#attempts');
+        var attemptIds = [];
+
+        if ($attemptsTable.length === 0) {
+            console.warn('CheatDetect: Attempts table not found'); // eslint-disable-line no-console
+            return attemptIds;
+        }
+
+        // Iterate through each row in the tbody
+        $attemptsTable.find('tbody tr').each(function() {
+            var $row = $(this);
+
+            // Find the review link in this row
+            var $reviewLink = $row.find('.reviewlink');
+
+            if ($reviewLink.length > 0) {
+                // Get the href attribute
+                var href = $reviewLink.attr('href');
+
+                if (href) {
+                    // Extract the attempt parameter from the URL
+                    var urlParts = href.split('?');
+                    if (urlParts.length > 1) {
+                        var urlParams = new URLSearchParams(urlParts[1]);
+                        var attemptId = urlParams.get('attempt');
+
+                        if (attemptId) {
+                            // Add the data attribute to the row
+                            $row.attr('data-cblue-attempt', attemptId);
+                            // Add to the array (convert to integer)
+                            attemptIds.push(parseInt(attemptId, 10));
+                            // eslint-disable-next-line no-console
+                            console.log('CheatDetect: Added data-cblue-attempt=' + attemptId + ' to row');
+                        }
+                    }
+                }
+            }
+        });
+
+        return attemptIds;
+    };
+
+    /**
+     * Fetch bulk attempt summaries from webservice
+     * @param {Array} attemptIds Array of attempt IDs to fetch
+     */
+    var fetchBulkAttemptSummaries = function(attemptIds) {
+        if (!attemptIds || attemptIds.length === 0) {
+            console.warn('CheatDetect: No attempt IDs provided'); // eslint-disable-line no-console
+            return;
+        }
+
+        var url = '/local/rest/api/quizaccess_cheatdetect/bulk-attempt-summaries';
+        var payload = {
+            attemptids: attemptIds
+        };
+
+        console.log('CheatDetect: Fetching bulk attempt summaries for IDs:', attemptIds); // eslint-disable-line no-console
+
+        $.ajax({
+            url: url,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(payload),
+            dataType: 'json',
+            success: function(response) {
+                // eslint-disable-next-line no-console
+                console.log('CheatDetect: Bulk attempt summaries response:', response);
+                if (response.success && response.data) {
+                    processBulkAttemptSummaries(response.data);
+                } else {
+                    // eslint-disable-next-line no-console
+                    console.warn('CheatDetect: Invalid response from bulk summaries webservice', response);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('CheatDetect: Error fetching bulk attempt summaries', error); // eslint-disable-line no-console
+            }
+        });
+    };
+
+    /**
+     * Determine if a slot should have a red icon based on cheat criteria
+     * @param {object} slotData Slot data from webservice
+     * @returns {boolean} True if icon should be red, false if green
+     */
+    var shouldSlotIconBeRed = function(slotData) {
+        return slotData.copy_count > 0 ||
+               slotData.focus_loss_count > 0 ||
+               slotData.has_extension === true;
+    };
+
+    /**
+     * Create SVG icon element
+     * @param {boolean} isRed True for red icon, false for green icon
+     * @param {string} iconType Type of icon: 'eye' or 'flag'
+     * @returns {jQuery} jQuery object containing the SVG icon
+     */
+    var createSvgIcon = function(isRed, iconType) {
+        var iconFile = isRed ? 'spy-icon-red.svg' : 'spy-icon-green.svg';
+        var svgPath = M.cfg.wwwroot + '/mod/quiz/accessrule/cheatdetect/pix/' + iconFile;
+
+        var $img = $('<img>')
+            .attr('src', svgPath)
+            .attr('aria-hidden', 'true')
+            .addClass('cheatdetect-svg-icon')
+            .addClass(iconType === 'eye' ? 'cheatdetect-icon-type-a' : 'cheatdetect-icon-type-b');
+
+        // Set size (20x20 for all icons)
+        if (iconType === 'eye') {
+            $img.css({
+                'width': '20px',
+                'height': '20px',
+                'margin-left': '8px',
+                'vertical-align': 'middle'
+            });
+        } else {
+            $img.css({
+                'width': '20px',
+                'height': '20px',
+                'display': 'block',
+                'margin-top': '4px'
+            });
+        }
+
+        return $img;
+    };
+
+    /**
+     * Extract slot number from reviewquestion.php URL
+     * @param {string} url URL containing slot parameter
+     * @returns {number|null} Slot number or null if not found
+     */
+    var extractSlotFromUrl = function(url) {
+        if (!url) {
+            return null;
+        }
+
+        var urlParts = url.split('?');
+        if (urlParts.length > 1) {
+            var urlParams = new URLSearchParams(urlParts[1]);
+            var slot = urlParams.get('slot');
+            return slot ? parseInt(slot, 10) : null;
+        }
+
+        return null;
+    };
+
+    /**
+     * Process bulk attempt summaries data
+     * @param {Array} summaries Array of attempt summaries from webservice
+     */
+    var processBulkAttemptSummaries = function(summaries) {
+        console.log('CheatDetect: Processing ' + summaries.length + ' attempt summaries'); // eslint-disable-line no-console
+
+        summaries.forEach(function(attemptData) {
+            var attemptId = attemptData.attemptid;
+            var slots = attemptData.slots;
+
+            // Find the corresponding table row
+            var $row = $('tr[data-cblue-attempt="' + attemptId + '"]');
+
+            if ($row.length === 0) {
+                console.warn('CheatDetect: Row not found for attempt ' + attemptId); // eslint-disable-line no-console
+                return;
+            }
+
+            // eslint-disable-next-line no-console
+            console.log('CheatDetect: Processing attempt ' + attemptId + ' with ' + slots.length + ' slots');
+
+            var hasRedSlot = false;
+
+            // Process all question links in this row (Type B icons)
+            $row.find('a[href*="reviewquestion.php"]').each(function() {
+                var $link = $(this);
+                var href = $link.attr('href');
+                var urlSlot = extractSlotFromUrl(href);
+
+                // Find the TD parent
+                var $td = $link.closest('td');
+
+                // Check if icon already added to this TD to avoid duplicates
+                if ($td.find('.cheatdetect-svg-icon').length > 0) {
+                    return;
+                }
+
+                // Find the slot data for this link
+                var slotData = null;
+                for (var i = 0; i < slots.length; i++) {
+                    if (slots[i].slot === urlSlot) {
+                        slotData = slots[i];
+                        break;
+                    }
+                }
+
+                var isRed = false;
+                if (slotData) {
+                    isRed = shouldSlotIconBeRed(slotData);
+
+                    if (isRed) {
+                        hasRedSlot = true;
+                    }
+                    // eslint-disable-next-line no-console
+                    console.log('CheatDetect: Data found for slot ' + urlSlot + ' (red: ' + isRed + ')');
+                } else {
+                    // No data = no cheat detected, use green icon
+                    // eslint-disable-next-line no-console
+                    console.log('CheatDetect: No data for slot ' + urlSlot + ', using green icon');
+                }
+
+                // Create the spy-icon and wrap it in a link
+                var $icon = createSvgIcon(isRed, 'flag');
+                var $iconLink = $('<a>')
+                    .attr('href', href)
+                    .css('display', 'inline-block')
+                    .append($icon);
+
+                // Inject the linked spy-icon in the TD parent
+                $td.append($iconLink);
+            });
+
+            // Process Type A icon (fa-eye)
+            var $reviewLink = $row.find('.reviewlink');
+            if ($reviewLink.length > 0) {
+                var $oldEyeIcon = $reviewLink.find('.cheatdetect-icon');
+
+                if ($oldEyeIcon.length > 0) {
+                    var $newEyeIcon = createSvgIcon(hasRedSlot, 'eye');
+                    $oldEyeIcon.replaceWith($newEyeIcon);
+                    // eslint-disable-next-line no-console
+                    console.log('CheatDetect: Replaced eye icon for attempt ' + attemptId +
+                                ' (red: ' + hasRedSlot + ')');
+                }
+            }
+        });
+
+        console.log('CheatDetect: Finished processing all attempt summaries'); // eslint-disable-line no-console
+    };
+
+    /**
      * Enhance the report table with cheat detection information
      */
     var enhanceReportTable = function() {
@@ -44,19 +289,20 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
 
         console.log('CheatDetect: Enhancing report table'); // eslint-disable-line no-console
 
+        // Add data-cblue-attempt attributes to table rows and collect attempt IDs
+        var attemptIds = addAttemptDataAttributes();
+
         // Add icons next to "Relecture de cette tentative" links
         addIconsToReviewLinks();
 
-        // Add icons next to question results
-        addIconsToQuestionResults();
-
-        // Get all attempt IDs from the table
-        var attemptIds = [1, 45, 78]; // Futur : extractAttemptIds($table);
-
+        // Fetch bulk attempt summaries if we have attempt IDs
         if (attemptIds.length === 0) {
             console.warn('CheatDetect: No attempts found'); // eslint-disable-line no-console
             return;
         }
+
+        // Fetch bulk attempt summaries from webservice
+        fetchBulkAttemptSummaries(attemptIds);
 
         return attemptIds;
 
@@ -89,42 +335,6 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
         });
     };
 
-    /**
-     * Add icons next to question results
-     */
-    var addIconsToQuestionResults = function() {
-        // Find all question result links (links in cells that contain question grades)
-        $('table.generaltable tbody tr').each(function() {
-            var $row = $(this);
-
-            // Find cells with question results (columns after c8, which is the total grade)
-            $row.find('td[class*="c9"], td[class*="c10"], td[class*="c11"], td[class*="c12"], td[class*="c13"],' +
-                      'td[class*="c14"], td[class*="c15"], td[class*="c16"], td[class*="c17"], td[class*="c18"]').each(function() {
-                var $cell = $(this);
-                var $link = $cell.find('a[href*="reviewquestion.php"]');
-
-                if ($link.length > 0) {
-                    // Check if icon already added
-                    if ($link.find('.cheatdetect-qicon').length > 0) {
-                        return;
-                    }
-
-                    // Create icon element
-                    var $icon = $('<i>')
-                        .addClass('fa fa-flag cheatdetect-qicon')
-                        .attr('aria-hidden', 'true')
-                        .css({
-                            'margin-left': '6px',
-                            'color': '#ff6600',
-                            'font-size': '0.9em'
-                        });
-
-                    // Append icon after the link content
-                    $link.append(' ').append($icon);
-                }
-            });
-        });
-    };
 
     /**
      * Enhance the review question page with cheat detection summary
