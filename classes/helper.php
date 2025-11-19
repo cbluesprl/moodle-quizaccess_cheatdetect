@@ -166,6 +166,8 @@ class helper {
             'total_extensions' => $result ? (int)$result->total_extensions : 0,
         ];
 
+        $summary['cheat_detected'] = ($result->total_copies + $result->total_focus_losses + $result->total_extensions) > 0;
+
         if ($summary['slot_count'] > 0) {
             $summary['avg_time'] = (int)($summary['total_time'] / $summary['slot_count']);
         } else {

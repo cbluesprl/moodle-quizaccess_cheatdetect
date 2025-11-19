@@ -176,6 +176,7 @@ class AttemptSummaryService extends Routes
 
                     $extensions = helper::get_slot_extensions($attemptid, $slot);
 
+                    $cheat_detected_for_slot = $extensions || ($metric->get('copy_count') + $metric->get('focus_loss_count') > 0);
                     $slots[] = [
                         'slot' => $slot,
                         'time_spent' => $time_spent,
@@ -183,7 +184,8 @@ class AttemptSummaryService extends Routes
                         'copy_count' => $metric->get('copy_count'),
                         'focus_loss_count' => $metric->get('focus_loss_count'),
                         'extensions_detected' => $extensions,
-                        'has_extension' => !empty($extensions)
+                        'has_extension' => !empty($extensions),
+                        'cheat_detected' => $cheat_detected_for_slot
                     ];
                 }
 
