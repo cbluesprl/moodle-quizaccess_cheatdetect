@@ -101,7 +101,8 @@ class AttemptSummaryService extends Routes
                     'copy_count' => 0,
                     'focus_loss_count' => 0,
                     'extensions_detected' => [],
-                    'has_extension' => false
+                    'has_extension' => false,
+                    'cheat_detected' => false
                 ];
                 return $response;
             }
@@ -119,6 +120,7 @@ class AttemptSummaryService extends Routes
             // Check for extensions.
             $extensions = helper::get_slot_extensions($attemptid, $slot);
             $response->success = true;
+            $cheat_detected_for_slot = !empty($extensions) || ($metric->get('copy_count') + $metric->get('focus_loss_count')) > 0;
             $response->data = [
                 'attemptid' => $attemptid,
                 'slot' => $slot,
@@ -127,7 +129,8 @@ class AttemptSummaryService extends Routes
                 'copy_count' => $metric->get('copy_count'),
                 'focus_loss_count' => $metric->get('focus_loss_count'),
                 'extensions_detected' => $extensions,
-                'has_extension' => !empty($extensions)
+                'has_extension' => !empty($extensions),
+                'cheat_detected' => $cheat_detected_for_slot
             ];
         } catch (\Throwable $e) {
             $response->error = $e->getMessage();
