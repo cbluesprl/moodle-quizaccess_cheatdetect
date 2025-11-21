@@ -13,6 +13,9 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
 
     var config = {}; // eslint-disable-line no-unused-vars
 
+    // Toggle between mock data and real webservice calls
+    var useMockData = false;
+
     /**
      * Initialize the report enhancer
      * @param {object} params Configuration parameters
@@ -79,6 +82,28 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
     };
 
     /**
+     * Add data-cblue-slot attribute to each TD containing reviewquestion.php links
+     */
+    var addSlotDataAttributes = function() {
+        // Find all links to reviewquestion.php
+        $('a[href*="reviewquestion.php"]').each(function() {
+            var $link = $(this);
+            var href = $link.attr('href');
+
+            if (href) {
+                var slotId = extractSlotFromUrl(href);
+                if (slotId) {
+                    // Find the TD parent and add the data attribute
+                    var $td = $link.closest('td');
+                    $td.attr('data-cblue-slot', slotId);
+                    // eslint-disable-next-line no-console
+                    console.log('CheatDetect: Added data-cblue-slot=' + slotId + ' to TD');
+                }
+            }
+        });
+    };
+
+    /**
      * Fetch bulk attempt summaries from webservice
      * @param {Array} attemptIds Array of attempt IDs to fetch
      */
@@ -88,18 +113,24 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
             return;
         }
 
-        var url = '/local/rest/api/quizaccess_cheatdetect/bulk-attempt-summaries';
-        var payload = {
-            attemptids: attemptIds
-        };
+        // Determine URL and method based on useMockData flag
+        var url = useMockData ?
+            M.cfg.wwwroot + '/mod/quiz/accessrule/cheatdetect/mockdata/bulk-attempt-summaries.json' :
+            '/local/rest/api/quizaccess_cheatdetect/bulk-attempt-summaries';
 
-        console.log('CheatDetect: Fetching bulk attempt summaries for IDs:', attemptIds); // eslint-disable-line no-console
+        var method = useMockData ? 'GET' : 'POST';
+        var payload = useMockData ? null : {attemptids: attemptIds};
 
-        $.ajax({
+        if (useMockData) {
+            // eslint-disable-next-line no-console
+            console.log('CheatDetect: Using MOCK DATA from file for attempt IDs:', attemptIds);
+        } else {
+            console.log('CheatDetect: Fetching bulk attempt summaries for IDs:', attemptIds); // eslint-disable-line no-console
+        }
+
+        var ajaxConfig = {
             url: url,
-            method: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify(payload),
+            method: method,
             dataType: 'json',
             success: function(response) {
                 // eslint-disable-next-line no-console
@@ -114,38 +145,35 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
             error: function(xhr, status, error) {
                 console.error('CheatDetect: Error fetching bulk attempt summaries', error); // eslint-disable-line no-console
             }
-        });
-    };
+        };
 
-    /**
-     * Determine if a slot should have a red icon based on cheat criteria
-     * @param {object} slotData Slot data from webservice
-     * @returns {boolean} True if icon should be red, false if green
-     */
-    var shouldSlotIconBeRed = function(slotData) {
-        return slotData.copy_count > 0 ||
-               slotData.focus_loss_count > 0 ||
-               slotData.has_extension === true;
+        // Add POST-specific parameters only for real webservice calls
+        if (!useMockData) {
+            ajaxConfig.contentType = 'application/json';
+            ajaxConfig.data = JSON.stringify(payload);
+        }
+
+        $.ajax(ajaxConfig);
     };
 
     /**
      * Create SVG icon element
-     * @param {boolean} isRed True for red icon, false for green icon
-     * @param {string} iconType Type of icon: 'eye' or 'flag'
+     * @param {string} iconColor Color of icon: 'red', 'green', or 'gray'
+     * @param {string} iconType Type of icon: 'summary' or 'question'
      * @returns {jQuery} jQuery object containing the SVG icon
      */
-    var createSvgIcon = function(isRed, iconType) {
-        var iconFile = isRed ? 'spy-icon-red.svg' : 'spy-icon-green.svg';
+    var createSvgIcon = function(iconColor, iconType) {
+        var iconFile = 'spy-icon-' + iconColor + '.svg';
         var svgPath = M.cfg.wwwroot + '/mod/quiz/accessrule/cheatdetect/pix/' + iconFile;
 
         var $img = $('<img>')
             .attr('src', svgPath)
             .attr('aria-hidden', 'true')
             .addClass('cheatdetect-svg-icon')
-            .addClass(iconType === 'eye' ? 'cheatdetect-icon-type-a' : 'cheatdetect-icon-type-b');
+            .attr('data-cblue-spyicon', iconType);
 
         // Set size (20x20 for all icons)
-        if (iconType === 'eye') {
+        if (iconType === 'summary') {
             $img.css({
                 'width': '20px',
                 'height': '20px',
@@ -208,66 +236,93 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
 
             var hasRedSlot = false;
 
-            // Process all question links in this row (Type B icons)
-            $row.find('a[href*="reviewquestion.php"]').each(function() {
-                var $link = $(this);
-                var href = $link.attr('href');
-                var urlSlot = extractSlotFromUrl(href);
+            // If slots array is empty, we need to add gray icons to all TDs with data-cblue-slot
+            if (!slots || slots.length === 0) {
+                // eslint-disable-next-line no-console
+                console.log('CheatDetect: No slot data for attempt ' + attemptId + ', using gray icons');
 
-                // Find the TD parent
-                var $td = $link.closest('td');
+                $row.find('td[data-cblue-slot]').each(function() {
+                    var $td = $(this);
 
-                // Check if icon already added to this TD to avoid duplicates
-                if ($td.find('.cheatdetect-svg-icon').length > 0) {
-                    return;
-                }
-
-                // Find the slot data for this link
-                var slotData = null;
-                for (var i = 0; i < slots.length; i++) {
-                    if (slots[i].slot === urlSlot) {
-                        slotData = slots[i];
-                        break;
+                    // Check if icon already added
+                    if ($td.find('.cheatdetect-svg-icon').length > 0) {
+                        return;
                     }
-                }
 
-                var isRed = false;
-                if (slotData) {
-                    isRed = shouldSlotIconBeRed(slotData);
+                    var slotId = $td.attr('data-cblue-slot');
+                    var $link = $td.find('a[href*="reviewquestion.php"]').first();
 
-                    if (isRed) {
+                    if ($link.length > 0) {
+                        var href = $link.attr('href');
+                        var $icon = createSvgIcon('gray', 'question');
+                        var $iconLink = $('<a>')
+                            .attr('href', href)
+                            .css('display', 'inline-block')
+                            .append($icon);
+
+                        $td.append($iconLink);
+                        // eslint-disable-next-line no-console
+                        console.log('CheatDetect: Added gray icon for slot ' + slotId);
+                    }
+                });
+            } else {
+                // Process each slot from the webservice data
+                slots.forEach(function(slotData) {
+                    var slotId = slotData.slot;
+
+                    // Find the TD with both data-cblue-attempt (via parent row) and data-cblue-slot
+                    var $td = $row.find('td[data-cblue-slot="' + slotId + '"]');
+
+                    if ($td.length === 0) {
+                        // eslint-disable-next-line no-console
+                        console.warn('CheatDetect: TD not found for attempt ' + attemptId + ' slot ' + slotId);
+                        return;
+                    }
+
+                    // Check if icon already added
+                    if ($td.find('.cheatdetect-svg-icon').length > 0) {
+                        return;
+                    }
+
+                    // Determine icon color based on cheat_detected
+                    var iconColor = slotData.cheat_detected ? 'red' : 'green';
+
+                    if (slotData.cheat_detected) {
                         hasRedSlot = true;
                     }
-                    // eslint-disable-next-line no-console
-                    console.log('CheatDetect: Data found for slot ' + urlSlot + ' (red: ' + isRed + ')');
-                } else {
-                    // No data = no cheat detected, use green icon
-                    // eslint-disable-next-line no-console
-                    console.log('CheatDetect: No data for slot ' + urlSlot + ', using green icon');
-                }
 
-                // Create the spy-icon and wrap it in a link
-                var $icon = createSvgIcon(isRed, 'flag');
-                var $iconLink = $('<a>')
-                    .attr('href', href)
-                    .css('display', 'inline-block')
-                    .append($icon);
+                    // Find the link in this TD
+                    var $link = $td.find('a[href*="reviewquestion.php"]').first();
 
-                // Inject the linked spy-icon in the TD parent
-                $td.append($iconLink);
-            });
+                    if ($link.length > 0) {
+                        var href = $link.attr('href');
+                        var $icon = createSvgIcon(iconColor, 'question');
+                        var $iconLink = $('<a>')
+                            .attr('href', href)
+                            .css('display', 'inline-block')
+                            .append($icon);
 
-            // Process Type A icon (fa-eye)
+                        $td.append($iconLink);
+                        // eslint-disable-next-line no-console
+                        console.log('CheatDetect: Added ' + iconColor + ' icon for slot ' + slotId +
+                                    ' (cheat_detected: ' + slotData.cheat_detected + ')');
+                    }
+                });
+            }
+
+            // Process summary icon (in the review link)
             var $reviewLink = $row.find('.reviewlink');
             if ($reviewLink.length > 0) {
                 var $oldEyeIcon = $reviewLink.find('.cheatdetect-icon');
 
                 if ($oldEyeIcon.length > 0) {
-                    var $newEyeIcon = createSvgIcon(hasRedSlot, 'eye');
+                    // Use gray if no slots, red if any slot is red, green otherwise
+                    var summaryColor = (!slots || slots.length === 0) ? 'gray' : (hasRedSlot ? 'red' : 'green');
+                    var $newEyeIcon = createSvgIcon(summaryColor, 'summary');
                     $oldEyeIcon.replaceWith($newEyeIcon);
                     // eslint-disable-next-line no-console
-                    console.log('CheatDetect: Replaced eye icon for attempt ' + attemptId +
-                                ' (red: ' + hasRedSlot + ')');
+                    console.log('CheatDetect: Replaced summary icon for attempt ' + attemptId +
+                                ' (color: ' + summaryColor + ')');
                 }
             }
         });
@@ -291,6 +346,9 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
 
         // Add data-cblue-attempt attributes to table rows and collect attempt IDs
         var attemptIds = addAttemptDataAttributes();
+
+        // Add data-cblue-slot attributes to TDs containing reviewquestion.php links
+        addSlotDataAttributes();
 
         // Add icons next to "Relecture de cette tentative" links
         addIconsToReviewLinks();

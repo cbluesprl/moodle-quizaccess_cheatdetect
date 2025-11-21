@@ -1,0 +1,201 @@
+{
+  "success": true,
+  "data": [
+    {
+      "attemptid": 4,
+      "summary": {
+        "slot_count": 2,
+        "total_time": 1200,
+        "total_copies": 3,
+        "total_focus_losses": 15,
+        "total_extensions": 0,
+        "cheat_detected": true,
+        "avg_time": 600,
+        "has_extensions": false
+      },
+      "slots": [
+        {
+          "slot": 1,
+          "time_spent": 800,
+          "time_percentage": 66.67,
+          "copy_count": 2,
+          "focus_loss_count": 10,
+          "extensions_detected": [],
+          "has_extension": false,
+          "cheat_detected": true
+        },
+        {
+          "slot": 2,
+          "time_spent": 400,
+          "time_percentage": 33.33,
+          "copy_count": 1,
+          "focus_loss_count": 5,
+          "extensions_detected": [],
+          "has_extension": false,
+          "cheat_detected": true
+        }
+      ]
+    },
+    {
+      "attemptid": 5,
+      "summary": {
+        "slot_count": 2,
+        "total_time": 2100,
+        "total_copies": 0,
+        "total_focus_losses": 0,
+        "total_extensions": 0,
+        "cheat_detected": false,
+        "avg_time": 1050,
+        "has_extensions": false
+      },
+      "slots": [
+        {
+          "slot": 1,
+          "time_spent": 1200,
+          "time_percentage": 57.14,
+          "copy_count": 0,
+          "focus_loss_count": 0,
+          "extensions_detected": [],
+          "has_extension": false,
+          "cheat_detected": false
+        },
+        {
+          "slot": 2,
+          "time_spent": 900,
+          "time_percentage": 42.86,
+          "copy_count": 0,
+          "focus_loss_count": 0,
+          "extensions_detected": [],
+          "has_extension": false,
+          "cheat_detected": false
+        }
+      ]
+    },
+    {
+      "attemptid": 6,
+      "summary": {
+        "slot_count": 2,
+        "total_time": 47400,
+        "total_copies": 0,
+        "total_focus_losses": 8,
+        "total_extensions": 1,
+        "cheat_detected": true,
+        "avg_time": 23700,
+        "has_extensions": true
+      },
+      "slots": [
+        {
+          "slot": 1,
+          "time_spent": 30000,
+          "time_percentage": 63.29,
+          "copy_count": 0,
+          "focus_loss_count": 5,
+          "extensions_detected": [
+            {
+              "key": "grammarly",
+              "name": "Grammarly Extension",
+              "uid": "ext123456",
+              "detected_at": "1763393000"
+            }
+          ],
+          "has_extension": true,
+          "cheat_detected": true
+        },
+        {
+          "slot": 2,
+          "time_spent": 17400,
+          "time_percentage": 36.71,
+          "copy_count": 0,
+          "focus_loss_count": 3,
+          "extensions_detected": [],
+          "has_extension": false,
+          "cheat_detected": true
+        }
+      ]
+    },
+    {
+      "attemptid": 7,
+      "summary": {
+        "slot_count": 2,
+        "total_time": 1560,
+        "total_copies": 5,
+        "total_focus_losses": 20,
+        "total_extensions": 2,
+        "cheat_detected": true,
+        "avg_time": 780,
+        "has_extensions": true
+      },
+      "slots": [
+        {
+          "slot": 1,
+          "time_spent": 900,
+          "time_percentage": 57.69,
+          "copy_count": 3,
+          "focus_loss_count": 12,
+          "extensions_detected": [
+            {
+              "key": "unknown_ext",
+              "name": "Unknown Extension",
+              "uid": "ext789012",
+              "detected_at": "1763394000"
+            }
+          ],
+          "has_extension": true,
+          "cheat_detected": true
+        },
+        {
+          "slot": 2,
+          "time_spent": 660,
+          "time_percentage": 42.31,
+          "copy_count": 2,
+          "focus_loss_count": 8,
+          "extensions_detected": [
+            {
+              "key": "chatgpt_helper",
+              "name": "ChatGPT Helper",
+              "uid": "ext345678",
+              "detected_at": "1763394100"
+            }
+          ],
+          "has_extension": true,
+          "cheat_detected": true
+        }
+      ]
+    },
+    {
+      "attemptid": 9,
+      "summary": {
+        "slot_count": 2,
+        "total_time": 2280,
+        "total_copies": 0,
+        "total_focus_losses": 2,
+        "total_extensions": 0,
+        "cheat_detected": true,
+        "avg_time": 1140,
+        "has_extensions": false
+      },
+      "slots": [
+        {
+          "slot": 1,
+          "time_spent": 1500,
+          "time_percentage": 65.79,
+          "copy_count": 0,
+          "focus_loss_count": 1,
+          "extensions_detected": [],
+          "has_extension": false,
+          "cheat_detected": true
+        },
+        {
+          "slot": 2,
+          "time_spent": 780,
+          "time_percentage": 34.21,
+          "copy_count": 0,
+          "focus_loss_count": 0,
+          "extensions_detected": [],
+          "has_extension": false,
+          "cheat_detected": false
+        }
+      ]
+    }
+  ]
+}
