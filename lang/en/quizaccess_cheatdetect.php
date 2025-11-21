@@ -20,6 +20,7 @@ $string['eventsdetected'] = '{$a} suspicious event(s) detected';
 $string['layoutwarning'] = 'Warning: In this configuration, the cheat detection plugin cannot function. To use it, please select the "Each question" setting.';
 
 // Review question page - summary block
+$string['questiondetails'] = 'Question details';
 $string['timespent'] = 'The user spent {$a->minutes} minutes ({$a->percentage}% of the quiz) on this question';
 $string['copycount'] = 'Number of copy(ies) on the question text: {$a}';
 $string['focuslosscount'] = 'Number of page focus loss(es): {$a}';

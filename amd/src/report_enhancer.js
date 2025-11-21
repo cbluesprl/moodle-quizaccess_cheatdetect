@@ -9,12 +9,17 @@
  * @author      gnormand@cblue.be
  */
 
+/* global bootstrap */
+
 define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Ajax, Notification, Str) {
 
     var config = {}; // eslint-disable-line no-unused-vars
 
     // Toggle between mock data and real webservice calls
-    var useMockData = false;
+    var useMockData = true;
+
+    // Debug mode: if true, popovers won't auto-close (easier to inspect in DevTools)
+    var debugMode = true;
 
     /**
      * Initialize the report enhancer
@@ -213,12 +218,146 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
     };
 
     /**
+     * Generate popover content HTML for a slot
+     * @param {object} slotData Slot data from webservice
+     * @param {object} strings Translated strings from language files
+     * @returns {string} HTML content for the popover
+     */
+    var generatePopoverContent = function(slotData, strings) {
+        // Calculate time in minutes
+        var timeInMinutes = Math.round(slotData.time_spent / 60);
+        var timePercentage = Math.round(slotData.time_percentage);
+
+        // Build HTML content as a bullet list
+        var html = '<ul class="mb-0">';
+
+        // Time spent
+        var timeSpentText = strings.timespent
+            .replace('{$a->minutes}', timeInMinutes)
+            .replace('{$a->percentage}', timePercentage);
+        html += '<li>' + timeSpentText + '</li>';
+
+        // Copy count (red if > 0)
+        var copyCountText = strings.copycount.replace('{$a}', slotData.copy_count);
+        if (slotData.copy_count > 0) {
+            html += '<li class="text-danger fw-bold">' + copyCountText + '</li>';
+        } else {
+            html += '<li>' + copyCountText + '</li>';
+        }
+
+        // Focus loss count (red if > 0)
+        var focusLossText = strings.focuslosscount.replace('{$a}', slotData.focus_loss_count);
+        if (slotData.focus_loss_count > 0) {
+            html += '<li class="text-danger fw-bold">' + focusLossText + '</li>';
+        } else {
+            html += '<li>' + focusLossText + '</li>';
+        }
+
+        // Extension detection (red if true)
+        var extensionText = slotData.has_extension ? strings.yes : strings.no;
+        var extensionDetectedText = strings.extensiondetected.replace('{$a}', extensionText);
+        if (slotData.has_extension) {
+            html += '<li class="text-danger fw-bold">' + extensionDetectedText + '</li>';
+        } else {
+            html += '<li>' + extensionDetectedText + '</li>';
+        }
+
+        html += '</ul>';
+
+        return html;
+    };
+
+    /**
+     * Initialize Bootstrap 5 popovers with custom configuration
+     */
+    var initializePopovers = function() {
+        // Check if Bootstrap is available
+        if (typeof bootstrap === 'undefined' || !bootstrap.Popover) {
+            console.warn('CheatDetect: Bootstrap 5 not available'); // eslint-disable-line no-console
+            return;
+        }
+
+        // Find all popover trigger elements
+        var popoverElements = document.querySelectorAll('[data-bs-toggle="popover"]');
+
+        popoverElements.forEach(function(element) {
+            // Check if already initialized
+            if (bootstrap.Popover.getInstance(element)) {
+                return;
+            }
+
+            // Configure popover options
+            var popoverConfig = {
+                html: true,
+                trigger: 'click',
+                sanitize: false
+            };
+
+            // In debug mode, popovers stay open (easier to inspect in DevTools)
+            if (debugMode) {
+                popoverConfig.trigger = 'manual';
+                element.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    var popover = bootstrap.Popover.getInstance(element);
+                    if (popover) {
+                        popover.show();
+                    }
+                });
+            }
+
+            // Initialize popover
+            new bootstrap.Popover(element, popoverConfig);
+        });
+
+        var message = 'CheatDetect: Initialized ' + popoverElements.length + ' popovers';
+        if (debugMode) {
+            message += ' (DEBUG MODE: popovers stay open)';
+        }
+        console.log(message); // eslint-disable-line no-console
+    };
+
+    /**
      * Process bulk attempt summaries data
      * @param {Array} summaries Array of attempt summaries from webservice
      */
     var processBulkAttemptSummaries = function(summaries) {
         console.log('CheatDetect: Processing ' + summaries.length + ' attempt summaries'); // eslint-disable-line no-console
 
+        // Load translated strings first
+        var stringKeys = [
+            {key: 'questiondetails', component: 'quizaccess_cheatdetect'},
+            {key: 'timespent', component: 'quizaccess_cheatdetect'},
+            {key: 'copycount', component: 'quizaccess_cheatdetect'},
+            {key: 'focuslosscount', component: 'quizaccess_cheatdetect'},
+            {key: 'extensiondetected', component: 'quizaccess_cheatdetect'},
+            {key: 'yes', component: 'quizaccess_cheatdetect'},
+            {key: 'no', component: 'quizaccess_cheatdetect'}
+        ];
+
+        Str.get_strings(stringKeys).then(function(stringsArray) {
+            // Build strings object for easier access
+            var strings = {
+                questiondetails: stringsArray[0],
+                timespent: stringsArray[1],
+                copycount: stringsArray[2],
+                focuslosscount: stringsArray[3],
+                extensiondetected: stringsArray[4],
+                yes: stringsArray[5],
+                no: stringsArray[6]
+            };
+
+            processAttemptSummariesWithStrings(summaries, strings);
+        }).catch(function(error) {
+            console.error('CheatDetect: Error loading strings', error); // eslint-disable-line no-console
+        });
+    };
+
+    /**
+     * Process attempt summaries with loaded strings
+     * @param {Array} summaries Array of attempt summaries from webservice
+     * @param {object} strings Translated strings from language files
+     */
+    var processAttemptSummariesWithStrings = function(summaries, strings) {
         summaries.forEach(function(attemptData) {
             var attemptId = attemptData.attemptid;
             var slots = attemptData.slots;
@@ -253,14 +392,36 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
                     var $link = $td.find('a[href*="reviewquestion.php"]').first();
 
                     if ($link.length > 0) {
-                        var href = $link.attr('href');
                         var $icon = createSvgIcon('gray', 'question');
-                        var $iconLink = $('<a>')
-                            .attr('href', href)
-                            .css('display', 'inline-block')
+
+                        // Generate popover content using translated strings
+                        var grayPopoverData = {
+                            time_spent: 0,
+                            time_percentage: 0,
+                            copy_count: 0,
+                            focus_loss_count: 0,
+                            has_extension: false
+                        };
+                        var grayPopoverContent = generatePopoverContent(grayPopoverData, strings);
+
+                        var $iconButton = $('<button>')
+                            .attr('type', 'button')
+                            .attr('data-bs-toggle', 'popover')
+                            .attr('data-bs-trigger', 'click')
+                            .attr('data-bs-html', 'true')
+                            .attr('data-bs-title', strings.questiondetails)
+                            .attr('data-bs-content', grayPopoverContent)
+                            .attr('data-bs-placement', 'left')
+                            .addClass('btn btn-link p-0')
+                            .css({
+                                'border': 'none',
+                                'background': 'none',
+                                'cursor': 'pointer',
+                                'display': 'inline-block'
+                            })
                             .append($icon);
 
-                        $td.append($iconLink);
+                        $td.append($iconButton);
                         // eslint-disable-next-line no-console
                         console.log('CheatDetect: Added gray icon for slot ' + slotId);
                     }
@@ -295,14 +456,29 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
                     var $link = $td.find('a[href*="reviewquestion.php"]').first();
 
                     if ($link.length > 0) {
-                        var href = $link.attr('href');
                         var $icon = createSvgIcon(iconColor, 'question');
-                        var $iconLink = $('<a>')
-                            .attr('href', href)
-                            .css('display', 'inline-block')
+
+                        // Generate popover content with translated strings
+                        var popoverContent = generatePopoverContent(slotData, strings);
+
+                        var $iconButton = $('<button>')
+                            .attr('type', 'button')
+                            .attr('data-bs-toggle', 'popover')
+                            .attr('data-bs-trigger', 'click')
+                            .attr('data-bs-html', 'true')
+                            .attr('data-bs-title', strings.questiondetails)
+                            .attr('data-bs-content', popoverContent)
+                            .attr('data-bs-placement', 'left')
+                            .addClass('btn btn-link p-0')
+                            .css({
+                                'border': 'none',
+                                'background': 'none',
+                                'cursor': 'pointer',
+                                'display': 'inline-block'
+                            })
                             .append($icon);
 
-                        $td.append($iconLink);
+                        $td.append($iconButton);
                         // eslint-disable-next-line no-console
                         console.log('CheatDetect: Added ' + iconColor + ' icon for slot ' + slotId +
                                     ' (cheat_detected: ' + slotData.cheat_detected + ')');
@@ -328,6 +504,9 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
         });
 
         console.log('CheatDetect: Finished processing all attempt summaries'); // eslint-disable-line no-console
+
+        // Initialize popovers with sanitize: false to allow red color styles
+        initializePopovers();
     };
 
     /**
