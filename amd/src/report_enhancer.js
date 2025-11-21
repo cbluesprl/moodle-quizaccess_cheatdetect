@@ -16,10 +16,10 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
     var config = {}; // eslint-disable-line no-unused-vars
 
     // Toggle between mock data and real webservice calls
-    var useMockData = true;
+    var useMockData = false;
 
     // Debug mode: if true, popovers won't auto-close (easier to inspect in DevTools)
-    var debugMode = true;
+    var debugMode = false;
 
     /**
      * Initialize the report enhancer
