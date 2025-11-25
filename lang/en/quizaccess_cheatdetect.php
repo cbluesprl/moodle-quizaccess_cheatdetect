@@ -21,9 +21,10 @@ $string['layoutwarning'] = 'Warning: In this configuration, the cheat detection 
 
 // Review question page - summary block
 $string['questiondetails'] = 'Question details';
-$string['timespent'] = 'The user spent {$a->minutes} minutes ({$a->percentage}% of the quiz) on this question';
+$string['timespent'] = 'The user spent {$a->minutes} minutes ({$a->percentage}% of the quiz) on question {$a->slot}';
 $string['copycount'] = 'Number of copy(ies) on the question text: {$a}';
 $string['focuslosscount'] = 'Number of page focus loss(es): {$a}';
 $string['extensiondetected'] = 'Cheat extension detection: {$a}';
 $string['yes'] = 'Yes';
 $string['no'] = 'No';
+$string['closepopover'] = 'Close';

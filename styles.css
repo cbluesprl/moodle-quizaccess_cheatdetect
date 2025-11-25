@@ -1,0 +1,64 @@
+/**
+ * CheatDetect plugin styles
+ *
+ * @package    quizaccess_cheatdetect
+ * @copyright  2025 CBlue SPRL
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+/* SVG Icons - Base styles */
+.cheatdetect-svg-icon {
+    width: 20px;
+    height: 20px;
+}
+
+/* SVG Icons - Summary type (next to review links) */
+.cheatdetect-svg-icon[data-cblue-spyicon="summary"] {
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+/* SVG Icons - Question type (in table cells) */
+.cheatdetect-svg-icon[data-cblue-spyicon="question"] {
+    display: block;
+    margin-top: 4px;
+}
+
+/* Icon button for popovers */
+.cheatdetect-icon-button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    display: inline-block;
+    padding: 0;
+}
+
+/* FontAwesome eye icon (initial placeholder) */
+.cheatdetect-icon {
+    margin-left: 8px;
+    color: #0066cc;
+}
+
+/* Resume block on review question page */
+.cheatdetect_resume {
+    background-color: #d3d3d3;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: var(--bs-border-width, 1px) solid transparent;
+    border-radius: var(--bs-border-radius, 0.375rem);
+    line-height: 1.6;
+}
+
+/* Resume block - Alert/warning values (red) */
+.cheatdetect_resume .cheatdetect-alert {
+    color: #ff0000;
+}
+
+/* Red text for alert values in popover */
+.popover-body .text-danger {
+    color: #dc3545 !important;
+}
+
+.popover-body .fw-bold {
+    font-weight: 700 !important;
+}

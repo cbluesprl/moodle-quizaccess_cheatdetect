@@ -6,12 +6,11 @@
  * @package
  * @copyright   2025 CBlue SPRL
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @author      gnormand@cblue.be
+ * @author      gnormand@cblue.be, jdeboysere@cblue.be
  */
 
-/* global bootstrap */
-
-define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Ajax, Notification, Str) {
+define(['jquery', 'core/ajax', 'core/notification', 'core/str', 'theme_boost/bootstrap/popover'],
+function($, Ajax, Notification, Str, Popover) {
 
     var config = {}; // eslint-disable-line no-unused-vars
 
@@ -29,11 +28,12 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
         config = params;
         // Wait for DOM to be ready
         $(document).ready(function() {
-            // Check if we are on the review question page
-            if (window.location.pathname.indexOf('reviewquestion.php') !== -1) {
-                enhanceReviewQuestionPage();
-            } else {
+            if (window.location.pathname.indexOf('/mod/quiz/report.php') !== -1) {
                 enhanceReportTable();
+            } else if (window.location.pathname.indexOf('/mod/quiz/reviewquestion.php') !== -1) {
+                enhanceReviewQuestionPage();
+            } else if (window.location.pathname.indexOf('/mod/quiz/review.php') !== -1) {
+                enhanceReviewQuestionPage();
             }
         });
     };
@@ -177,23 +177,6 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
             .addClass('cheatdetect-svg-icon')
             .attr('data-cblue-spyicon', iconType);
 
-        // Set size (20x20 for all icons)
-        if (iconType === 'summary') {
-            $img.css({
-                'width': '20px',
-                'height': '20px',
-                'margin-left': '8px',
-                'vertical-align': 'middle'
-            });
-        } else {
-            $img.css({
-                'width': '20px',
-                'height': '20px',
-                'display': 'block',
-                'margin-top': '4px'
-            });
-        }
-
         return $img;
     };
 
@@ -221,20 +204,22 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
      * Generate popover content HTML for a slot
      * @param {object} slotData Slot data from webservice
      * @param {object} strings Translated strings from language files
+     * @param {number|string} slotId The slot/question number
      * @returns {string} HTML content for the popover
      */
-    var generatePopoverContent = function(slotData, strings) {
+    var generatePopoverContent = function(slotData, strings, slotId) {
         // Calculate time in minutes
         var timeInMinutes = Math.round(slotData.time_spent / 60);
         var timePercentage = Math.round(slotData.time_percentage);
 
-        // Build HTML content as a bullet list
+        // Build HTML content as bullet list
         var html = '<ul class="mb-0">';
 
-        // Time spent
+        // Time spent (with slot number)
         var timeSpentText = strings.timespent
             .replace('{$a->minutes}', timeInMinutes)
-            .replace('{$a->percentage}', timePercentage);
+            .replace('{$a->percentage}', timePercentage)
+            .replace('{$a->slot}', slotId);
         html += '<li>' + timeSpentText + '</li>';
 
         // Copy count (red if > 0)
@@ -268,52 +253,212 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
     };
 
     /**
-     * Initialize Bootstrap 5 popovers with custom configuration
+     * Initialize Bootstrap popovers using jQuery (works with Bootstrap 4 and 5)
      */
     var initializePopovers = function() {
-        // Check if Bootstrap is available
-        if (typeof bootstrap === 'undefined' || !bootstrap.Popover) {
-            console.warn('CheatDetect: Bootstrap 5 not available'); // eslint-disable-line no-console
-            return;
-        }
-
         // Find all popover trigger elements
-        var popoverElements = document.querySelectorAll('[data-bs-toggle="popover"]');
+        var $popoverElements = $('[data-bs-toggle="popover"]');
 
-        popoverElements.forEach(function(element) {
+        $popoverElements.each(function() {
+            var $element = $(this);
+
             // Check if already initialized
-            if (bootstrap.Popover.getInstance(element)) {
+            if ($element.data('cheatdetect-initialized')) {
                 return;
             }
+            $element.data('cheatdetect-initialized', true);
 
-            // Configure popover options
-            var popoverConfig = {
+            // Get original content
+            var originalContent = $element.attr('data-bs-content') || '';
+            var title = $element.attr('data-bs-title') || '';
+
+            // Initialize popover with Bootstrap Popover constructor
+            var popoverInstance = new Popover($element[0], {
                 html: true,
-                trigger: 'click',
+                trigger: 'manual',
+                placement: 'left',
+                title: title,
+                content: originalContent,
                 sanitize: false
-            };
+            });
 
-            // In debug mode, popovers stay open (easier to inspect in DevTools)
-            if (debugMode) {
-                popoverConfig.trigger = 'manual';
-                element.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    var popover = bootstrap.Popover.getInstance(element);
-                    if (popover) {
-                        popover.show();
+            // Store instance for later use
+            $element.data('popover-instance', popoverInstance);
+
+            // Desktop: show on hover (only for non-touch devices)
+            $element.on('mouseenter', function() {
+                // Skip on touch devices (they use click/tap)
+                if ('ontouchstart' in window) {
+                    return;
+                }
+                // Skip if popover already visible for this element
+                if ($element.attr('aria-describedby')) {
+                    return;
+                }
+                $element.data('popover-hover', true);
+                // Hide any other open popovers first
+                hideAllPopoversExcept($element);
+                popoverInstance.show();
+            });
+
+            // Desktop: hide on mouse leave (with delay to allow moving to popover)
+            $element.on('mouseleave', function(e) {
+                // Skip on touch devices
+                if ('ontouchstart' in window) {
+                    return;
+                }
+                // Check if mouse moved to the popover itself
+                var $relatedTarget = $(e.relatedTarget);
+                if ($relatedTarget.closest('.popover').length > 0) {
+                    // Mouse moved to popover, don't hide
+                    $element.data('popover-inside', true);
+                    return;
+                }
+                $element.data('popover-hover', false);
+                setTimeout(function() {
+                    // Don't hide if mouse is back on trigger or inside popover
+                    if (!$element.data('popover-hover') && !$element.data('popover-inside')) {
+                        popoverInstance.hide();
                     }
-                });
-            }
+                }, 300);
+            });
 
-            // Initialize popover
-            new bootstrap.Popover(element, popoverConfig);
+            // Mobile/Tablet & Keyboard: toggle on click/tap/enter
+            $element.on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var isVisible = $element.attr('aria-describedby');
+                hideAllPopovers();
+                if (!isVisible) {
+                    popoverInstance.show();
+                }
+            });
+
+            // Keyboard accessibility: Enter and Space to toggle, Escape to close
+            $element.on('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    var isVisible = $element.attr('aria-describedby');
+                    hideAllPopovers();
+                    if (!isVisible) {
+                        popoverInstance.show();
+                    }
+                } else if (e.key === 'Escape') {
+                    popoverInstance.hide();
+                }
+            });
+
+            // Ensure button is focusable and has proper ARIA attributes
+            $element.attr('tabindex', '0');
+            $element.attr('role', 'button');
+            $element.attr('aria-expanded', 'false');
+
+            // Update aria-expanded when popover shows/hides
+            $element.on('shown.bs.popover', function() {
+                $element.attr('aria-expanded', 'true');
+            });
+            $element.on('hidden.bs.popover', function() {
+                $element.attr('aria-expanded', 'false');
+                $element.data('popover-hover', false);
+                $element.data('popover-inside', false);
+            });
         });
 
-        var message = 'CheatDetect: Initialized ' + popoverElements.length + ' popovers';
-        if (debugMode) {
-            message += ' (DEBUG MODE: popovers stay open)';
-        }
-        console.log(message); // eslint-disable-line no-console
+        // Setup close handlers
+        setupPopoverCloseHandlers();
+
+        // eslint-disable-next-line no-console
+        console.log('CheatDetect: Initialized ' + $popoverElements.length + ' Bootstrap popovers');
+    };
+
+    /**
+     * Hide all Bootstrap popovers except the specified element
+     * @param {jQuery} $except Element to exclude from hiding
+     */
+    var hideAllPopoversExcept = function($except) {
+        $('[data-bs-toggle="popover"]').each(function() {
+            var $el = $(this);
+            if (!$except || $el[0] !== $except[0]) {
+                var instance = $el.data('popover-instance');
+                if (instance) {
+                    instance.hide();
+                }
+            }
+        });
+    };
+
+    /**
+     * Hide all Bootstrap popovers
+     */
+    var hideAllPopovers = function() {
+        $('[data-bs-toggle="popover"]').each(function() {
+            var instance = $(this).data('popover-instance');
+            if (instance) {
+                instance.hide();
+            }
+        });
+    };
+
+    /**
+     * Setup event handlers for popover hover behavior
+     */
+    var setupPopoverCloseHandlers = function() {
+        // Track mouse entering popover content (desktop only)
+        $(document).off('mouseenter.cheatdetect', '.popover');
+        $(document).on('mouseenter.cheatdetect', '.popover', function() {
+            if ('ontouchstart' in window) {
+                return;
+            }
+            var popoverId = $(this).attr('id');
+            var $trigger = $('[aria-describedby="' + popoverId + '"]');
+            $trigger.data('popover-inside', true);
+        });
+
+        // Track mouse leaving popover content (desktop only)
+        $(document).off('mouseleave.cheatdetect', '.popover');
+        $(document).on('mouseleave.cheatdetect', '.popover', function() {
+            if ('ontouchstart' in window) {
+                return;
+            }
+            var popoverId = $(this).attr('id');
+            var $trigger = $('[aria-describedby="' + popoverId + '"]');
+            $trigger.data('popover-inside', false);
+            // Hide after a small delay
+            setTimeout(function() {
+                if (!$trigger.data('popover-hover') && !$trigger.data('popover-inside')) {
+                    var instance = $trigger.data('popover-instance');
+                    if (instance) {
+                        instance.hide();
+                    }
+                }
+            }, 300);
+        });
+
+        // Prevent clicks inside popover from bubbling
+        $(document).off('click.cheatdetect-inside', '.popover');
+        $(document).on('click.cheatdetect-inside', '.popover', function(e) {
+            e.stopPropagation();
+        });
+
+        // Handle click/tap outside to close popovers
+        $(document).off('click.cheatdetect-outside touchend.cheatdetect-outside');
+        $(document).on('click.cheatdetect-outside touchend.cheatdetect-outside', function(e) {
+            if ($(e.target).closest('[data-bs-toggle="popover"]').length > 0) {
+                return;
+            }
+            if ($(e.target).closest('.popover').length > 0) {
+                return;
+            }
+            hideAllPopovers();
+        });
+
+        // Global Escape key handler to close any open popover
+        $(document).off('keydown.cheatdetect-escape');
+        $(document).on('keydown.cheatdetect-escape', function(e) {
+            if (e.key === 'Escape') {
+                hideAllPopovers();
+            }
+        });
     };
 
     /**
@@ -331,7 +476,8 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
             {key: 'focuslosscount', component: 'quizaccess_cheatdetect'},
             {key: 'extensiondetected', component: 'quizaccess_cheatdetect'},
             {key: 'yes', component: 'quizaccess_cheatdetect'},
-            {key: 'no', component: 'quizaccess_cheatdetect'}
+            {key: 'no', component: 'quizaccess_cheatdetect'},
+            {key: 'closepopover', component: 'quizaccess_cheatdetect'}
         ];
 
         Str.get_strings(stringKeys).then(function(stringsArray) {
@@ -343,7 +489,8 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
                 focuslosscount: stringsArray[3],
                 extensiondetected: stringsArray[4],
                 yes: stringsArray[5],
-                no: stringsArray[6]
+                no: stringsArray[6],
+                closepopover: stringsArray[7]
             };
 
             processAttemptSummariesWithStrings(summaries, strings);
@@ -402,7 +549,7 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
                             focus_loss_count: 0,
                             has_extension: false
                         };
-                        var grayPopoverContent = generatePopoverContent(grayPopoverData, strings);
+                        var grayPopoverContent = generatePopoverContent(grayPopoverData, strings, slotId);
 
                         var $iconButton = $('<button>')
                             .attr('type', 'button')
@@ -412,13 +559,7 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
                             .attr('data-bs-title', strings.questiondetails)
                             .attr('data-bs-content', grayPopoverContent)
                             .attr('data-bs-placement', 'left')
-                            .addClass('btn btn-link p-0')
-                            .css({
-                                'border': 'none',
-                                'background': 'none',
-                                'cursor': 'pointer',
-                                'display': 'inline-block'
-                            })
+                            .addClass('btn btn-link p-0 cheatdetect-icon-button')
                             .append($icon);
 
                         $td.append($iconButton);
@@ -459,7 +600,7 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
                         var $icon = createSvgIcon(iconColor, 'question');
 
                         // Generate popover content with translated strings
-                        var popoverContent = generatePopoverContent(slotData, strings);
+                        var popoverContent = generatePopoverContent(slotData, strings, slotId);
 
                         var $iconButton = $('<button>')
                             .attr('type', 'button')
@@ -469,13 +610,7 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
                             .attr('data-bs-title', strings.questiondetails)
                             .attr('data-bs-content', popoverContent)
                             .attr('data-bs-placement', 'left')
-                            .addClass('btn btn-link p-0')
-                            .css({
-                                'border': 'none',
-                                'background': 'none',
-                                'cursor': 'pointer',
-                                'display': 'inline-block'
-                            })
+                            .addClass('btn btn-link p-0 cheatdetect-icon-button')
                             .append($icon);
 
                         $td.append($iconButton);
@@ -561,11 +696,7 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
             // Create icon element
             var $icon = $('<i>')
                 .addClass('fa fa-eye cheatdetect-icon')
-                .attr('aria-hidden', 'true')
-                .css({
-                    'margin-left': '8px',
-                    'color': '#0066cc'
-                });
+                .attr('aria-hidden', 'true');
 
             // Append icon to the link
             $link.append(' ').append($icon);
@@ -575,39 +706,51 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
 
     /**
      * Enhance the review question page with cheat detection summary
+     * Finds all #question-X-Y elements and injects summary blocks
      */
     var enhanceReviewQuestionPage = function() {
         console.log('CheatDetect: Enhancing review question page'); // eslint-disable-line no-console
 
-        // Extract attempt and slot from URL parameters
-        var attemptId = getUrlParameter('attempt');
-        var slotId = getUrlParameter('slot');
+        // Find all question elements with pattern #question-{attemptId}-{slotId}
+        var questionElements = $('[id^="question-"]').filter(function() {
+            // Match pattern: question-{number}-{number}
+            return /^question-\d+-\d+$/.test(this.id);
+        });
 
-        if (!attemptId || !slotId) {
-            console.warn('CheatDetect: Missing attempt or slot parameter in URL'); // eslint-disable-line no-console
+        if (questionElements.length === 0) {
+            console.warn('CheatDetect: No question elements found'); // eslint-disable-line no-console
             return;
         }
 
-        // Fetch attempt summary data from webservice
-        fetchAttemptSummary(attemptId, slotId);
-    };
+        console.log('CheatDetect: Found ' + questionElements.length + ' question elements'); // eslint-disable-line no-console
 
-    /**
-     * Get URL parameter value by name
-     * @param {string} name Parameter name
-     * @returns {string|null} Parameter value or null if not found
-     */
-    var getUrlParameter = function(name) {
-        var urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get(name);
+        // Process each question element
+        questionElements.each(function() {
+            var $questionElement = $(this);
+            var elementId = $questionElement.attr('id');
+
+            // Extract attemptId and slotId from the element ID
+            var matches = elementId.match(/^question-(\d+)-(\d+)$/);
+            if (matches) {
+                var attemptId = matches[1];
+                var slotId = matches[2];
+
+                // eslint-disable-next-line no-console
+                console.log('CheatDetect: Processing question element - attempt: ' + attemptId + ', slot: ' + slotId);
+
+                // Fetch attempt summary data for this specific question
+                fetchAttemptSummary(attemptId, slotId, $questionElement);
+            }
+        });
     };
 
     /**
      * Fetch attempt summary data from webservice
      * @param {string} attemptId Attempt ID
      * @param {string} slotId Slot ID
+     * @param {jQuery} $questionElement The question element to inject the summary into
      */
-    var fetchAttemptSummary = function(attemptId, slotId) {
+    var fetchAttemptSummary = function(attemptId, slotId, $questionElement) {
         var url = '/local/rest/api/quizaccess_cheatdetect/attempt-summary/' + attemptId + '/slots/' + slotId;
 
         $.ajax({
@@ -616,7 +759,7 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
             dataType: 'json',
             success: function(response) {
                 if (response.success && response.data) {
-                    createCheatDetectResumeBlock(response.data);
+                    createCheatDetectResumeBlock(response.data, $questionElement, slotId);
                 } else {
                     console.warn('CheatDetect: Invalid response from webservice', response); // eslint-disable-line no-console
                 }
@@ -630,10 +773,12 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
     /**
      * Create and display the cheat detection resume block
      * @param {object} data Attempt summary data from webservice
+     * @param {jQuery} $questionElement The question element to inject the summary into
+     * @param {string} slotId The slot/question number
      */
-    var createCheatDetectResumeBlock = function(data) {
-        // Check if block already exists
-        if ($('.cheatdetect_resume').length > 0) {
+    var createCheatDetectResumeBlock = function(data, $questionElement, slotId) {
+        // Check if block already exists in this question element
+        if ($questionElement.find('.cheatdetect_resume').length > 0) {
             return;
         }
 
@@ -663,35 +808,28 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
             var extensionText = data.has_extension ? yesStr : noStr;
 
             // Create the resume block HTML
-            var $resumeBlock = $('<div>')
-                .addClass('cheatdetect_resume')
-                .css({
-                    'background-color': '#d3d3d3',
-                    'padding': '1rem 1rem',
-                    'margin-bottom': '1rem',
-                    'border': 'var(--bs-border-width) solid #fff0',
-                    'border-radius': 'var(--bs-border-radius)',
-                    'font-size': '14px',
-                    'line-height': '1.6'
-                });
+            var $resumeBlock = $('<div>').addClass('cheatdetect_resume');
 
-            // Time spent line
+            // Time spent line (with slot number)
             var timeSpentText = timeSpentStr
                 .replace('{$a->minutes}', timeInMinutes)
-                .replace('{$a->percentage}', timePercentage);
+                .replace('{$a->percentage}', timePercentage)
+                .replace('{$a->slot}', slotId);
             var $timeLine = $('<div>').text(timeSpentText);
 
-            // Copy count line (in red if > 0)
+            // Copy count line (add alert class if > 0)
             var copyCountText = copyCountStr.replace('{$a}', data.copy_count);
-            var $copyLine = $('<div>')
-                .text(copyCountText)
-                .css('color', data.copy_count > 0 ? '#ff0000' : 'inherit');
+            var $copyLine = $('<div>').text(copyCountText);
+            if (data.copy_count > 0) {
+                $copyLine.addClass('cheatdetect-alert');
+            }
 
-            // Focus loss count line (in red if > 0)
+            // Focus loss count line (add alert class if > 0)
             var focusLossCountText = focusLossCountStr.replace('{$a}', data.focus_loss_count);
-            var $focusLine = $('<div>')
-                .text(focusLossCountText)
-                .css('color', data.focus_loss_count > 0 ? '#ff0000' : 'inherit');
+            var $focusLine = $('<div>').text(focusLossCountText);
+            if (data.focus_loss_count > 0) {
+                $focusLine.addClass('cheatdetect-alert');
+            }
 
             // Extension detection line
             var extensionDetectedText = extensionDetectedStr.replace('{$a}', extensionText);
@@ -703,22 +841,17 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str'], function($, Aja
                 .append($focusLine)
                 .append($extensionLine);
 
-            // Insert the block after the .outcome element
-            var $outcomeContainer = $('.outcome');
+            // Insert the block after the .outcome element within the question element
+            var $outcomeContainer = $questionElement.find('.outcome');
             if ($outcomeContainer.length > 0) {
                 $outcomeContainer.after($resumeBlock);
             } else {
-                // Fallback: insert at the top of the question container
-                var $targetContainer = $('.que');
-                if ($targetContainer.length > 0) {
-                    $targetContainer.prepend($resumeBlock);
-                } else {
-                    // Last fallback: insert after the page header
-                    $('#page-content').prepend($resumeBlock);
-                }
+                // Fallback: insert at the top of the question element
+                $questionElement.prepend($resumeBlock);
             }
 
-            console.log('CheatDetect: Resume block added successfully'); // eslint-disable-line no-console
+            // eslint-disable-next-line no-console
+            console.log('CheatDetect: Resume block added to ' + $questionElement.attr('id'));
         }).catch(function(error) {
             console.error('CheatDetect: Error loading strings', error); // eslint-disable-line no-console
         });

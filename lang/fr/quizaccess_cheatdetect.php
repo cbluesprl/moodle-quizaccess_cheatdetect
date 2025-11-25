@@ -21,9 +21,10 @@ $string['layoutwarning'] = 'Attention, dans cette configuration, le plugin de d�
 
 // Review question page - summary block
 $string['questiondetails'] = 'Détails de la question';
-$string['timespent'] = 'L\'utilisateur a passé {$a->minutes} minutes ({$a->percentage}% du quiz) sur cette question';
+$string['timespent'] = 'L\'utilisateur a passé {$a->minutes} minutes ({$a->percentage}% du quiz) sur la question {$a->slot}';
 $string['copycount'] = 'Nombre de copie(s) sur l\'intitulé de la question : {$a}';
 $string['focuslosscount'] = 'Nombre de perte(s) de focus de la page : {$a}';
 $string['extensiondetected'] = 'Détection d\'extension de triche : {$a}';
 $string['yes'] = 'Oui';
 $string['no'] = 'Non';
+$string['closepopover'] = 'Fermer';
