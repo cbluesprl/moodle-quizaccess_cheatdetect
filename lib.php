@@ -15,10 +15,26 @@ defined('MOODLE_INTERNAL') || die();
 function quizaccess_cheatdetect_before_footer() {
     global $PAGE, $DB;
 
+    // Check if we're on a quiz report page
+    $pagetype = $PAGE->pagetype;
+    if (strpos($pagetype, 'mod-quiz-report') !== 0
+        && strpos($pagetype, 'mod-quiz-reviewquestion') !== 0) {
+        return;
+    }
+    $context = $PAGE->context;
+    if ($context->contextlevel != CONTEXT_MODULE) {
+        return;
+    }
 
+    $cm = get_coursemodule_from_id('quiz', $context->instanceid);
+    if (!$cm) {
+        return;
+    }
     // Load JavaScript module
 
     $PAGE->requires->js_call_amd('quizaccess_cheatdetect/report_enhancer', 'init', [
+        'cmid' => $cm->id,
+        'quizid' => $cm->instance
 
     ]);
 }
