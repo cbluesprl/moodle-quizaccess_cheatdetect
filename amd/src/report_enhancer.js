@@ -14,20 +14,14 @@
 define(['jquery', 'core/ajax', 'core/notification', 'core/str', 'theme_boost/bootstrap/popover'],
 function($, Ajax, Notification, Str, Popover) {
 
-    var config = {}; // eslint-disable-line no-unused-vars
-
     // Toggle between mock data and real webservice calls
     var useMockData = false;
 
-    // Debug mode: if true, popovers won't auto-close (easier to inspect in DevTools)
-    var debugMode = false;
-
     /**
      * Initialize the report enhancer
-     * @param {object} params Configuration parameters
+     * @param {object} params Configuration parameters (unused, reserved for future use)
      */
-    var init = function(params) {
-        config = params;
+    var init = function(params) { // eslint-disable-line no-unused-vars
         // Wait for DOM to be ready
         $(document).ready(function() {
             if (window.location.pathname.indexOf('/mod/quiz/report.php') !== -1) {

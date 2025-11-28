@@ -1,5 +1,5 @@
 /**
- * @fileoverview Point d'entrée AMD pour le détecteur d'extensions avec exports sécurisés
+ * @fileoverview AMD entry point for extension detector with secure exports
  * @module quizaccess_cheatdetect/extension-detector/index
  * @copyright 2025 CBlue SRL <support@cblue.be>
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -12,94 +12,94 @@ define([
     'use strict';
 
     /**
-     * Instance privée du détecteur
+     * Private detector instance
      * @type {Object|null}
      * @private
      */
     let detectorInstance = null;
 
     /**
-     * Initialise le système de détection d'extensions
-     * Appelé par Moodle via $PAGE->requires->js_call_amd()
+     * Initialize the extension detection system
+     * Called by Moodle via $PAGE->requires->js_call_amd()
      * @function init
-     * @param {Object} [backendParams] - Paramètres du backend (non utilisé actuellement)
-     * @returns {Object|null} Instance du détecteur ou null si échec
+     * @param {Object} [backendParams] - Backend parameters (not currently used)
+     * @returns {Object|null} Detector instance or null if failed
      * @example
-     * // Appelé depuis PHP/Moodle
+     * // Called from PHP/Moodle
      * ExtensionDetector.init(backendParams);
      * @since 1.0.0
      */
-    var init = function(backendParams) {
+    var init = function(backendParams) { // eslint-disable-line no-unused-vars
         try {
-            // Vérification des prérequis de base
+            // Basic prerequisites check
             if (typeof MutationObserver === 'undefined') {
                 return null;
             }
 
-            // CORRECTION CRITIQUE: Attendre que le tracking soit prêt
-            // avant de démarrer la détection d'extensions
+            // CRITICAL FIX: Wait for tracking to be ready
+            // before starting extension detection
             if (!window._trackingInitialized) {
 
-                // Attendre que le tracking soit initialisé
+                // Wait for tracking to be initialized
                 const checkTracking = setInterval(() => {
                     if (window._trackingInitialized) {
                         clearInterval(checkTracking);
                         startDetector();
                     }
-                }, 100); // Vérifier toutes les 100ms
+                }, 100); // Check every 100ms
 
-                // Timeout de sécurité après 5 secondes
+                // Safety timeout after 5 seconds
                 setTimeout(() => {
                     clearInterval(checkTracking);
                     if (!detectorInstance) {
-                        console.warn('🧩 Extension Detector: Timeout, démarrage forcé sans tracking');
+                        console.warn('🧩 Extension Detector: Timeout, forced start without tracking');
                         startDetector();
                     }
                 }, 5000);
 
                 return null;
             } else {
-                // Le tracking est déjà prêt
+                // Tracking is already ready
                 return startDetector();
             }
 
         } catch (error) {
-            console.error('🧩 Extension Detector: Erreur d\'initialisation', error);
+            console.error('🧩 Extension Detector: Initialization error', error);
             return null;
         }
     };
 
     /**
-     * Démarre le détecteur d'extensions
+     * Start the extension detector
      * @function startDetector
-     * @returns {Object|null} Instance du détecteur
+     * @returns {Object|null} Detector instance
      * @private
      */
     function startDetector() {
         try {
             if (detectorInstance) {
-                console.log('🧩 Extension Detector: Instance déjà créée');
+                console.log('🧩 Extension Detector: Instance already created');
                 return detectorInstance;
             }
 
-            // Création et démarrage du détecteur
+            // Create and start detector
             detectorInstance = new ExtensionDetector.ExtensionDetector();
             detectorInstance.start();
 
-            console.log('🧩 Extension Detector: Démarré avec succès');
+            console.log('🧩 Extension Detector: Started successfully');
             return detectorInstance;
 
         } catch (error) {
-            console.error('🧩 Extension Detector: Erreur de démarrage', error);
+            console.error('🧩 Extension Detector: Startup error', error);
             return null;
         }
     }
 
     /**
-     * Récupère les métriques d'extensions au format JSON
-     * Méthode sécurisée pour que d'autres modules accèdent aux métriques
+     * Get extension metrics as JSON
+     * Secure method for other modules to access metrics
      * @function getMetrics
-     * @returns {string} Chaîne JSON des métriques actuelles ou objet vide si non disponible
+     * @returns {string} JSON string of current metrics or empty object if unavailable
      * @example
      * const metricsJSON = ExtensionDetector.getMetrics();
      * const metrics = JSON.parse(metricsJSON);
@@ -125,7 +125,7 @@ define([
         }
     };
 
-    // API publique
+    // Public API
     return {
         init: init,
         getMetrics: getMetrics

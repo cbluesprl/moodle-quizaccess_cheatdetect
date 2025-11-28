@@ -1,5 +1,5 @@
 /**
- * @fileoverview Configuration pour la détection d'extensions
+ * @fileoverview Configuration for extension detection
  * @module quizaccess_cheatdetect/extension-detector/config
  * @copyright 2025 CBlue SRL <support@cblue.be>
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -11,29 +11,29 @@ define([], function() {
 
     /**
      * @typedef {Object} ExtensionConfig
-     * @property {string} name - Nom affiché de l'extension
-     * @property {Object.<string, string>} extensionIds - IDs d'extension par navigateur
-     * @property {string[]} textKeywords - Mots-clés à rechercher dans le contenu texte
-     * @property {Object.<string, string[]>} files - Fichiers d'extension à vérifier
-     * @property {PatternConfig} patterns - Motifs d'attributs HTML
+     * @property {string} name - Display name of the extension
+     * @property {Object.<string, string>} extensionIds - Extension IDs per browser
+     * @property {string[]} textKeywords - Keywords to search in text content
+     * @property {Object.<string, string[]>} files - Extension files to check
+     * @property {PatternConfig} patterns - HTML attribute patterns
      */
 
     /**
      * @typedef {Object} PatternConfig
-     * @property {string[]} ids - Motifs d'ID d'élément
-     * @property {string[]} classes - Motifs de classe CSS
+     * @property {string[]} ids - Element ID patterns
+     * @property {string[]} classes - CSS class patterns
      */
 
     /**
      * @typedef {Object} SettingsConfig
-     * @property {number} shadowDOMCheckDelay - Délai de vérification du Shadow DOM (ms)
-     * @property {number} fileCheckTimeout - Timeout pour la vérification des fichiers (ms)
-     * @property {boolean} removeDetectedElements - Supprimer les éléments détectés
-     * @property {boolean} enableLogging - Activer les logs de débogage
+     * @property {number} shadowDOMCheckDelay - Shadow DOM check delay (ms)
+     * @property {number} fileCheckTimeout - File check timeout (ms)
+     * @property {boolean} removeDetectedElements - Remove detected elements
+     * @property {boolean} enableLogging - Enable debug logging
      */
 
     /**
-     * Configurations de détection d'extensions
+     * Extension detection configurations
      * @type {Object.<string, ExtensionConfig>}
      * @readonly
      */
@@ -42,25 +42,25 @@ define([], function() {
             key: 'crowdly',
             name: 'Crowdly – AI Study Assistant for Moodle',
 
-            // IDs d'extension détectés dynamiquement (sera rempli au runtime lors de la détection)
+            // Dynamically detected extension IDs (filled at runtime during detection)
             detectedIds: [],
 
-            // Mots-clés à rechercher dans le contenu texte
+            // Keywords to search in text content
             textKeywords: ['crowdly.sh/', 'AI Magic'],
 
-            // Motifs d'attributs HTML
+            // HTML attribute patterns
             patterns: {
-                // Motifs d'ID d'élément
+                // Element ID patterns
                 ids: ['crowd'],
 
-                // Motifs de classe CSS
+                // CSS class patterns
                 classes: ['crowd']
             }
         }
     };
 
     /**
-     * Paramètres de détection
+     * Detection settings
      * @type {SettingsConfig}
      * @readonly
      */
@@ -72,17 +72,17 @@ define([], function() {
     };
 
     /**
-     * Expression régulière pour détecter les URLs d'extension multi-navigateur
+     * Regular expression to detect multi-browser extension URLs
      * @type {RegExp}
      * @readonly
      */
     var EXTENSION_URL_REGEX = /(chrome-extension:\/\/|moz-extension:\/\/)([a-z0-9-]+)/;
 
     /**
-     * Obtient la configuration d'extension par clé
+     * Get extension configuration by key
      * @function getExtension
-     * @param {string} key - Clé de l'extension
-     * @returns {ExtensionConfig|null} Configuration de l'extension ou null si non trouvée
+     * @param {string} key - Extension key
+     * @returns {ExtensionConfig|null} Extension configuration or null if not found
      * @example
      * const crowdlyConfig = getExtension('crowdly');
      * console.log(crowdlyConfig.name); // "Crowdly – AI Study Assistant for Moodle"
@@ -93,9 +93,9 @@ define([], function() {
     };
 
     /**
-     * Obtient toutes les extensions configurées
+     * Get all configured extensions
      * @function getAllExtensions
-     * @returns {Array.<ExtensionConfig & {key: string}>} Tableau de toutes les extensions avec leur clé
+     * @returns {Array.<ExtensionConfig & {key: string}>} Array of all extensions with their key
      * @example
      * const allExtensions = getAllExtensions();
      * allExtensions.forEach(ext => console.log(ext.key, ext.name));
@@ -108,25 +108,10 @@ define([], function() {
     };
 
     /**
-     * Obtient tous les IDs d'extension détectés dynamiquement
-     * @function getExtensionId
-     * @param {string} extensionKey - Clé de l'extension
-     * @returns {string[]|null} Tableau des IDs détectés ou null
-     * @example
-     * const ids = getExtensionId('crowdly');
-     * // ["abc123", "xyz789"]
-     * @since 1.0.0
-     * @deprecated Utiliser getAllExtensionIds à la place
-     */
-    var getExtensionId = function(extensionKey) {
-        return getAllExtensionIds(extensionKey);
-    };
-
-    /**
-     * Obtient tous les IDs d'extension détectés dynamiquement
+     * Get all dynamically detected extension IDs
      * @function getAllExtensionIds
-     * @param {string} extensionKey - Clé de l'extension
-     * @returns {string[]} Tableau de tous les IDs d'extension détectés
+     * @param {string} extensionKey - Extension key
+     * @returns {string[]} Array of all detected extension IDs
      * @example
      * const ids = getAllExtensionIds('crowdly');
      * // ["abc123xyz", "def456ghi"]
@@ -138,16 +123,16 @@ define([], function() {
             return [];
         }
 
-        // Retourner uniquement les IDs détectés dynamiquement
+        // Return only dynamically detected IDs
         return extension.detectedIds || [];
     };
 
     /**
-     * Ajoute un ID d'extension détecté dynamiquement
+     * Add a dynamically detected extension ID
      * @function addDetectedExtensionId
-     * @param {string} extensionKey - Clé de l'extension
-     * @param {string} extensionId - ID d'extension à ajouter
-     * @returns {boolean} True si l'ID a été ajouté avec succès
+     * @param {string} extensionKey - Extension key
+     * @param {string} extensionId - Extension ID to add
+     * @returns {boolean} True if ID was added successfully
      * @example
      * addDetectedExtensionId('crowdly', 'abc123xyz');
      * @since 1.0.0
@@ -162,13 +147,13 @@ define([], function() {
             extension.detectedIds = [];
         }
 
-        // Éviter les doublons
+        // Avoid duplicates
         if (extension.detectedIds.indexOf(extensionId) === -1) {
             extension.detectedIds.push(extensionId);
             if (SETTINGS.enableLogging) {
                 // eslint-disable-next-line no-console
-                console.log('🧩 Extension Detector: ID d\'extension ajouté pour ' +
-                    extensionKey + ' : ' + extensionId);
+                console.log('🧩 Extension Detector: Extension ID added for ' +
+                    extensionKey + ': ' + extensionId);
             }
             return true;
         }
@@ -177,11 +162,11 @@ define([], function() {
     };
 
     /**
-     * Vérifie si un ID d'extension appartient à une extension configurée
+     * Check if an extension ID belongs to a configured extension
      * @function matchesExtensionId
-     * @param {string} extensionKey - Clé de l'extension
-     * @param {string} extensionId - ID d'extension à vérifier
-     * @returns {boolean} True si l'ID correspond à l'extension
+     * @param {string} extensionKey - Extension key
+     * @param {string} extensionId - Extension ID to check
+     * @returns {boolean} True if ID matches the extension
      * @example
      * matchesExtensionId('crowdly', 'abc123xyz');
      * @since 1.0.0
@@ -191,14 +176,13 @@ define([], function() {
         return allIds.indexOf(extensionId) !== -1;
     };
 
-    // API publique
+    // Public API
     return {
         EXTENSIONS: EXTENSIONS,
         SETTINGS: SETTINGS,
         EXTENSION_URL_REGEX: EXTENSION_URL_REGEX,
         getExtension: getExtension,
         getAllExtensions: getAllExtensions,
-        getExtensionId: getExtensionId,
         getAllExtensionIds: getAllExtensionIds,
         addDetectedExtensionId: addDetectedExtensionId,
         matchesExtensionId: matchesExtensionId

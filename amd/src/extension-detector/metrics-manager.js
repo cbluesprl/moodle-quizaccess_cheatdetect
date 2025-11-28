@@ -1,5 +1,5 @@
 /**
- * @fileoverview Gestionnaire de métriques ultra-simplifié pour la détection d'extensions
+ * @fileoverview Ultra-simplified metrics manager for extension detection
  * @module quizaccess_cheatdetect/extension-detector/metrics-manager
  * @copyright 2025 CBlue SRL <support@cblue.be>
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -7,38 +7,37 @@
  */
 
 define([
-    'quizaccess_cheatdetect/extension-detector/config',
-    'quizaccess_cheatdetect/shared/utils'
-], function(Config, SharedUtils) {
+    'quizaccess_cheatdetect/extension-detector/config'
+], function(Config) {
     'use strict';
 
     /**
      * @typedef {Object} DetectedElement
-     * @property {string} uid - Identifiant unique de l'élément détecté
-     * @property {string} timestamp - Horodatage ISO de la détection
-     * @property {string} DOM - HTML externe de l'élément
-     * @property {string|null} shadowDOM - HTML du Shadow DOM si présent
-     * @property {string} detection - Méthode de détection utilisée
+     * @property {string} uid - Unique identifier of detected element
+     * @property {string} timestamp - ISO timestamp of detection
+     * @property {string} DOM - Element outer HTML
+     * @property {string|null} shadowDOM - Shadow DOM HTML if present
+     * @property {string} detection - Detection method used
      */
 
     /**
      * @typedef {Object} ExtensionMetrics
-     * @property {DetectedElement[]} detectedElements - Liste des éléments détectés
+     * @property {DetectedElement[]} detectedElements - List of detected elements
      */
 
     /**
      * @typedef {Object} MetricsData
-     * @property {Object.<string, ExtensionMetrics>} extensions - Métriques par extension
+     * @property {Object.<string, ExtensionMetrics>} extensions - Metrics per extension
      */
 
     /**
      * @typedef {Object} ExportData
-     * @property {string} timestamp - Horodatage de l'export
-     * @property {Object.<string, Object>} extensionDetection - Données d'export par extension
+     * @property {string} timestamp - Export timestamp
+     * @property {Object.<string, Object>} extensionDetection - Export data per extension
      */
 
     /**
-     * Constructeur du gestionnaire de métriques
+     * Metrics manager constructor
      * @class MetricsManager
      * @example
      * const manager = new MetricsManager();
@@ -53,19 +52,19 @@ define([
     };
 
     /**
-     * Enregistre un élément détecté pour une extension
+     * Log a detected element for an extension
      * @memberof MetricsManager
      * @function logDetectedElement
-     * @param {string} extensionKey - Clé de l'extension
-     * @param {Object} elementInfo - Informations sur l'élément détecté
-     * @param {string} elementInfo.DOM - HTML externe de l'élément
-     * @param {string|null} elementInfo.shadowDOM - HTML du Shadow DOM
-     * @param {string} elementInfo.detection - Méthode de détection
+     * @param {string} extensionKey - Extension key
+     * @param {Object} elementInfo - Detected element information
+     * @param {string} elementInfo.DOM - Element outer HTML
+     * @param {string|null} elementInfo.shadowDOM - Shadow DOM HTML
+     * @param {string} elementInfo.detection - Detection method
      * @example
      * manager.logDetectedElement('crowdly', {
      *   DOM: '<div class="crowd-element">...</div>',
      *   shadowDOM: null,
-     *   detection: 'Classe trouvée : crowd'
+     *   detection: 'Class found: crowd'
      * });
      * @since 1.0.0
      */
@@ -78,7 +77,7 @@ define([
             timestamp: new Date().toISOString()
         };
 
-        // Copier les propriétés de elementInfo
+        // Copy elementInfo properties
         for (var key in elementInfo) {
             if (elementInfo.hasOwnProperty(key)) {
                 detectedElement[key] = elementInfo[key];
@@ -89,10 +88,10 @@ define([
     };
 
     /**
-     * Initialise les données d'extension si nécessaire
+     * Initialize extension data if necessary
      * @memberof MetricsManager
      * @function _initExtension
-     * @param {string} extensionKey - Clé de l'extension
+     * @param {string} extensionKey - Extension key
      * @private
      * @since 1.0.0
      */
@@ -105,10 +104,10 @@ define([
     };
 
     /**
-     * Exporte toutes les données au format JSON
+     * Export all data as JSON
      * @memberof MetricsManager
      * @function exportMetricsAsJSON
-     * @returns {string} Chaîne JSON contenant toutes les métriques
+     * @returns {string} JSON string containing all metrics
      * @example
      * const jsonData = manager.exportMetricsAsJSON();
      * const metrics = JSON.parse(jsonData);
@@ -121,7 +120,7 @@ define([
             extensionDetection: {}
         };
 
-        // Transformer la structure pour chaque extension
+        // Transform structure for each extension
         var self = this;
         Object.keys(this.data.extensions).forEach(function(extensionKey) {
             var ext = self.data.extensions[extensionKey];
@@ -137,7 +136,7 @@ define([
     };
 
     /**
-     * Réinitialise toutes les données
+     * Reset all data
      * @memberof MetricsManager
      * @function reset
      * @example
@@ -152,13 +151,13 @@ define([
     };
 
     /**
-     * Obtient les données actuelles
+     * Get current data
      * @memberof MetricsManager
      * @function getData
-     * @returns {MetricsData} Données actuelles du gestionnaire
+     * @returns {MetricsData} Current manager data
      * @example
      * const data = manager.getData();
-     * console.log('Extensions suivies:', Object.keys(data.extensions));
+     * console.log('Tracked extensions:', Object.keys(data.extensions));
      * @since 1.0.0
      */
     MetricsManager.prototype.getData = function() {

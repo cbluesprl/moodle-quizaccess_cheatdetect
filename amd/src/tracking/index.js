@@ -1,5 +1,5 @@
 /**
- * @fileoverview Module de tracking d'activité utilisateur avec détection d'événements suspects
+ * @fileoverview User activity tracking module with suspicious event detection
  * @module quizaccess_cheatdetect/tracking/index
  * @copyright 2025 CBlue SRL <support@cblue.be>
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -14,12 +14,12 @@ define([
 
     /**
      * @typedef {Object} BackendParams
-     * @property {boolean} [startDetection=true] - Active/désactive le tracking
-     * @property {string} [sessionId] - ID de session
-     * @property {number} [attemptid] - ID de la tentative
-     * @property {number} [userid] - ID de l'utilisateur
-     * @property {number} [quizid] - ID du quiz
-     * @property {number} [slot] - Numéro de slot de question
+     * @property {boolean} [startDetection=true] - Enable/disable tracking
+     * @property {string} [sessionId] - Session ID
+     * @property {number} [attemptid] - Attempt ID
+     * @property {number} [userid] - User ID
+     * @property {number} [quizid] - Quiz ID
+     * @property {number} [slot] - Question slot number
      */
 
     /**
@@ -31,9 +31,9 @@ define([
      * @since 1.0.0
      */
     var init = function(backendParams) {
-        // Ne rien faire si startDetection n'est pas explicitement true
+        // Do nothing if startDetection is not explicitly true
         if (backendParams.startDetection !== true) {
-            console.log('Tracking désactivé: startDetection !== true');
+            console.log('Tracking disabled: startDetection !== true');
             return;
         }
 
@@ -41,7 +41,6 @@ define([
             let db = null;
             let isCurrentlyFocused = !document.hidden;
 
-            let lastKnownExtensions = {};
             let extensionCheckInterval = null;
             let extensionDetectedDataAlreadySent = new Set();
 
@@ -58,14 +57,14 @@ define([
                     const metrics = JSON.parse(metricsJSON);
 
                     if (!metrics.timestamp || !metrics.extensionDetection) {
-                        console.warn('Extension Detector: Structure de métriques invalide reçue');
+                        console.warn('Extension Detector: Invalid metrics structure received');
                         return {};
                     }
 
                     return metrics.extensionDetection;
 
                 } catch (error) {
-                    console.warn('Extension Detector: Erreur lors de la récupération des métriques d\'extension:', error);
+                    console.warn('Extension Detector: Error retrieving extension metrics:', error);
                     return {};
                 }
             }
@@ -109,9 +108,6 @@ define([
             function startExtensionMonitoring() {
                 checkForNewExtensions();
 
-                const initialExtensions = getExtensionsMetrics();
-                lastKnownExtensions = initialExtensions;
-
                 extensionCheckInterval = setInterval(() => {
                     checkForNewExtensions();
                 }, 5000);
@@ -149,7 +145,7 @@ define([
             function initIndexedDB() {
                 return new Promise((resolve, reject) => {
                     if (!checkIndexedDBAvailability()) {
-                        reject("IndexedDB n'est pas disponible.");
+                        reject("IndexedDB is not available.");
                         return;
                     }
 
@@ -168,7 +164,7 @@ define([
                     };
 
                     request.onerror = (event) => {
-                        console.error("Erreur lors de l'ouverture d'IndexedDB:", event.target.error);
+                        console.error("Error opening IndexedDB:", event.target.error);
                         reject(event.target.error);
                     };
                 });
@@ -193,7 +189,7 @@ define([
                         ...newEvent
                     };
 
-                    console.log('Nouvelle action utilisateur stockée', _newEvent);
+                    console.log('New user action stored', _newEvent);
                     objectStore.add(_newEvent);
                 }
             }
@@ -207,7 +203,6 @@ define([
              * @private
              */
             function trackDocumentState(event) {
-                const now = performance.now();
                 let type = event.type;
 
                 if (event.type === 'visibilitychange') {
@@ -253,7 +248,7 @@ define([
              * @returns {void}
              * @private
              */
-            function trackCopy(event) {
+            function trackCopy(event) { // eslint-disable-line no-unused-vars
                 const selection = window.getSelection();
                 const copiedText = selection.toString();
 
@@ -323,7 +318,7 @@ define([
              */
             function initTracking() {
                 if (window._trackingInitialized) {
-                    console.warn('Tracking déjà initialisé, ignoré');
+                    console.warn('Tracking already initialized, skipped');
                     return;
                 }
                 window._trackingInitialized = true;
@@ -338,7 +333,7 @@ define([
                 };
                 logEvent(pageLoadEvent);
 
-                // Démarrer le détecteur d'extensions
+                // Start extension detector
                 ExtensionDetector.init(backendParams);
 
                 startExtensionMonitoring();
@@ -401,21 +396,21 @@ define([
                                 body: JSON.stringify(data)
                             }).then(response => {
                                 if (response.ok) {
-                                    console.log('Action(s) utilisateur envoyée(s) au serveur', data);
+                                    console.log('User action(s) sent to server', data);
                                     clearStoredEvents();
                                 } else {
-                                    console.error('Erreur lors de l\'envoi des événements');
+                                    console.error('Error sending events');
                                 }
                             }).catch(error => {
-                                console.error('Erreur réseau:', error);
+                                console.error('Network error:', error);
                             });
                         } else {
-                            console.log('Aucune action utilisateur à sauvegarder');
+                            console.log('No user actions to save');
                         }
                     };
 
                     request.onerror = (error) => {
-                        console.error("Erreur lors de la récupération des événements depuis IndexedDB:", error);
+                        console.error("Error retrieving events from IndexedDB:", error);
                     };
                 }
             }
@@ -439,7 +434,7 @@ define([
                     flushEvents();
                 }, 5000);
             }).catch((error) => {
-                console.error("Échec de l'initialisation d'IndexedDB:", error);
+                console.error("Failed to initialize IndexedDB:", error);
             });
         };
 

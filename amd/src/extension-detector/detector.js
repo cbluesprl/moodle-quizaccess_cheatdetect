@@ -1,5 +1,5 @@
 /**
- * @fileoverview Détecteur d'extensions principal avec gestionnaire de métriques
+ * @fileoverview Main extension detector with metrics manager
  * @module quizaccess_cheatdetect/extension-detector/detector
  * @copyright 2025 CBlue SRL <support@cblue.be>
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -17,15 +17,15 @@ define([
 
     /**
      * @typedef {Object} ExtensionDetectorState
-     * @property {Set<string>} detectedExtensions - Extensions détectées
-     * @property {Map<string, number>} extensionPaths - Chemins d'extension avec timestamp
-     * @property {boolean} isRunning - État de fonctionnement
+     * @property {Set<string>} detectedExtensions - Detected extensions
+     * @property {Map<string, number>} extensionPaths - Extension paths with timestamp
+     * @property {boolean} isRunning - Running state
      */
 
     /**
-     * Constructeur du détecteur d'extensions principal
+     * Main extension detector constructor
      * @class ExtensionDetector
-     * @throws {Error} Si le navigateur n'est pas supporté
+     * @throws {Error} If browser is not supported
      * @example
      * const detector = new ExtensionDetector();
      * detector.start();
@@ -39,28 +39,28 @@ define([
             self._onExtensionDetected(extensionKey, extension, method);
         });
 
-        // Gestionnaire de métriques simplifié
+        // Simplified metrics manager
         this.metricsManager = new MetricsManager.MetricsManager();
 
-        // Connexion du gestionnaire de métriques au moniteur shadow
+        // Connect metrics manager to shadow monitor
         this.shadowMonitor.setMetricsManager(this.metricsManager);
 
-        // Connexion du callback pour la détection d'ID d'extension
+        // Connect callback for extension ID detection
         this.shadowMonitor.setExtensionIdDetectedCallback(function(extensionKey, extensionId) {
-            // Scanner le DOM pour supprimer tous les éléments avec cet ID
+            // Scan DOM to remove all elements with this ID
             self._scanAndRemoveElementsWithExtensionId(extensionKey, extensionId);
         });
 
-        // État de détection
+        // Detection state
         this.detectedExtensions = new Set();
         this.isRunning = false;
     };
 
     /**
-     * Démarre le système de détection
+     * Start the detection system
      * @memberof ExtensionDetector
      * @function start
-     * @throws {Error} Si le démarrage échoue
+     * @throws {Error} If startup fails
      * @example
      * detector.start();
      * @since 1.0.0
@@ -69,7 +69,7 @@ define([
         if (this.isRunning) {
             if (Config.SETTINGS.enableLogging) {
                 // eslint-disable-next-line no-console
-                console.warn('🧩 Extension Detector: Déjà en cours d\'exécution');
+                console.warn('🧩 Extension Detector: Already running');
             }
             return;
         }
@@ -77,22 +77,22 @@ define([
         this.isRunning = true;
 
         try {
-            // Réinitialiser l'état
+            // Reset state
             this._resetState();
 
-            // Démarrer la surveillance du Shadow DOM
+            // Start Shadow DOM monitoring
             this.shadowMonitor.start();
 
         } catch (error) {
             // eslint-disable-next-line no-console
-            console.error('🧩 Extension Detector: Échec du démarrage', error);
+            console.error('🧩 Extension Detector: Startup failed', error);
             this.isRunning = false;
             throw error;
         }
     };
 
     /**
-     * Arrête le système de détection
+     * Stop the detection system
      * @memberof ExtensionDetector
      * @function stop
      * @example
@@ -106,22 +106,22 @@ define([
 
         if (Config.SETTINGS.enableLogging) {
             // eslint-disable-next-line no-console
-            console.log('🧩 Extension Detector: Arrêt du système de détection');
+            console.log('🧩 Extension Detector: Stopping detection system');
         }
         this.isRunning = false;
 
-        // Arrêter les composants
+        // Stop components
         this.shadowMonitor.stop();
         this.browserHandler.cleanup();
 
         if (Config.SETTINGS.enableLogging) {
             // eslint-disable-next-line no-console
-            console.log('🧩 Extension Detector: Système de détection arrêté');
+            console.log('🧩 Extension Detector: Detection system stopped');
         }
     };
 
     /**
-     * Redémarre le système de détection
+     * Restart the detection system
      * @memberof ExtensionDetector
      * @function restart
      * @example
@@ -132,7 +132,7 @@ define([
         var self = this;
         if (Config.SETTINGS.enableLogging) {
             // eslint-disable-next-line no-console
-            console.log('🧩 Extension Detector: Redémarrage du système');
+            console.log('🧩 Extension Detector: Restarting system');
         }
         this.stop();
         setTimeout(function() {
@@ -141,17 +141,17 @@ define([
     };
 
     /**
-     * Gère la détection d'extension
+     * Handle extension detection
      * @memberof ExtensionDetector
      * @function _onExtensionDetected
-     * @param {string} extensionKey - Clé de l'extension
-     * @param {Object} extension - Configuration de l'extension
-     * @param {string} method - Méthode de détection utilisée
+     * @param {string} extensionKey - Extension key
+     * @param {Object} extension - Extension configuration
+     * @param {string} method - Detection method used
      * @private
      * @since 1.0.0
      */
     ExtensionDetector.prototype._onExtensionDetected = function(extensionKey, extension, method) {
-        // Éviter les détections dupliquées
+        // Avoid duplicate detections
         if (this.detectedExtensions.has(extensionKey)) {
             return;
         }
@@ -160,91 +160,21 @@ define([
 
         if (Config.SETTINGS.enableLogging) {
             // eslint-disable-next-line no-console
-            console.log('🚨 Extension Detector: ' + extension.name + ' détectée via ' + method);
+            console.log('🚨 Extension Detector: ' + extension.name + ' detected via ' + method);
         }
 
-        // Logger l'événement de détection
+        // Log detection event
         if (Config.SETTINGS.enableLogging) {
             this._logDetection(extensionKey, extension.name, method);
         }
     };
 
     /**
-     * Gère la détection d'ID d'extension
-     * @memberof ExtensionDetector
-     * @function _onExtensionIdDetected
-     * @param {string} extensionPath - Chemin de l'extension
-     * @private
-     * @since 1.0.0
-     */
-    ExtensionDetector.prototype._onExtensionIdDetected = function(extensionPath) {
-        var self = this;
-
-        if (this.extensionPaths.has(extensionPath)) {
- return;
-}
-
-        if (Config.SETTINGS.enableLogging) {
-            // eslint-disable-next-line no-console
-            console.log('🧩 Extension Detector: Chemin d\'extension détecté - ' + extensionPath);
-        }
-        this.extensionPaths.set(extensionPath, Date.now());
-
-        // Vérifier si l'extension est accessible
-        this.browserHandler.isExtensionAccessible(extensionPath)
-            .then(function(isAccessible) {
-                if (!isAccessible) {
-                    if (Config.SETTINGS.enableLogging) {
-                        // eslint-disable-next-line no-console
-                        console.warn('🧩 Extension Detector: Extension à ' + extensionPath + ' non accessible');
-                    }
-                    return;
-                }
-
-                // Vérifier les fichiers pour toutes les extensions configurées
-                self._checkFilesForAllExtensions(extensionPath);
-            });
-    };
-
-    /**
-     * Vérifie les fichiers d'extension pour toutes les configurations
-     * @memberof ExtensionDetector
-     * @function _checkFilesForAllExtensions
-     * @param {string} extensionPath - Chemin de l'extension
-     * @private
-     * @since 1.0.0
-     */
-    ExtensionDetector.prototype._checkFilesForAllExtensions = function(extensionPath) {
-        var self = this;
-        var extensions = Config.getAllExtensions();
-
-        extensions.forEach(function(extension) {
-            if (!extension.files || Object.keys(extension.files).length === 0) {
-                return;
-            }
-
-            self.browserHandler.checkFiles(extensionPath, extension.files)
-                .then(function(result) {
-                    if (result.detected) {
-                        self._onExtensionDetected(extension.key, extension, 'fileCheck');
-                    }
-                })
-                .catch(function(error) {
-                    if (Config.SETTINGS.enableLogging) {
-                        // eslint-disable-next-line no-console
-                        console.error('🧩 Extension Detector: ' +
-                            'Erreur lors de la vérification des fichiers pour ' + extension.key, error);
-                    }
-                });
-        });
-    };
-
-    /**
-     * Scanne et supprime tous les éléments du DOM contenant un ID d'extension spécifique
+     * Scan and remove all DOM elements containing a specific extension ID
      * @memberof ExtensionDetector
      * @function _scanAndRemoveElementsWithExtensionId
-     * @param {string} extensionKey - Clé de l'extension
-     * @param {string} extensionId - ID d'extension à rechercher
+     * @param {string} extensionKey - Extension key
+     * @param {string} extensionId - Extension ID to search for
      * @private
      * @since 1.0.0
      */
@@ -255,16 +185,16 @@ define([
 
         if (Config.SETTINGS.enableLogging) {
             // eslint-disable-next-line no-console
-            console.log('🧩 Extension Detector: Scan du DOM pour supprimer tous les éléments avec l\'extension ID  : ' +
+            console.log('🧩 Extension Detector: Scanning DOM to remove all elements with extension ID: ' +
                 extensionId);
         }
 
         var removedCount = 0;
 
-        // Scanner le DOM principal
+        // Scan main DOM
         removedCount += this._scanElementsForExtensionId(document.body, extensionKey, extensionId);
 
-        // Scanner tous les Shadow DOM existants
+        // Scan all existing Shadow DOMs
         var allElements = document.querySelectorAll('*');
         for (var i = 0; i < allElements.length; i++) {
             var element = allElements[i];
@@ -275,18 +205,18 @@ define([
 
         if (Config.SETTINGS.enableLogging) {
             // eslint-disable-next-line no-console
-            console.log('🧩 Extension Detector: ' + removedCount + ' éléments supprimés avec l\'extension ID ' + extensionId);
+            console.log('🧩 Extension Detector: ' + removedCount + ' elements removed with extension ID ' + extensionId);
         }
     };
 
     /**
-     * Scanne un élément et ses enfants pour un ID d'extension et les supprime
+     * Scan an element and its children for an extension ID and remove them
      * @memberof ExtensionDetector
      * @function _scanElementsForExtensionId
-     * @param {Element} rootElement - Élément racine à scanner
-     * @param {string} extensionKey - Clé de l'extension
-     * @param {string} extensionId - ID d'extension à rechercher
-     * @returns {number} Nombre d'éléments supprimés
+     * @param {Element} rootElement - Root element to scan
+     * @param {string} extensionKey - Extension key
+     * @param {string} extensionId - Extension ID to search for
+     * @returns {number} Number of elements removed
      * @private
      * @since 1.0.0
      */
@@ -298,12 +228,12 @@ define([
         var removedCount = 0;
         var elementsToRemove = [];
 
-        // Trouver tous les éléments contenant l'ID d'extension
+        // Find all elements containing the extension ID
         var allElements = rootElement.querySelectorAll('*');
         for (var i = 0; i < allElements.length; i++) {
             var element = allElements[i];
 
-            // Sécurité: ne jamais supprimer body, html, head
+            // Security: never remove body, html, head
             if (element === document.body || element === document.documentElement ||
                 element.tagName === 'BODY' || element.tagName === 'HTML' || element.tagName === 'HEAD') {
                 continue;
@@ -314,20 +244,20 @@ define([
             }
         }
 
-        // Supprimer les éléments trouvés
+        // Remove found elements
         for (var j = 0; j < elementsToRemove.length; j++) {
             var elementToRemove = elementsToRemove[j];
             try {
-                // Logger l'élément avant suppression si logging activé
+                // Log element before removal if logging enabled
                 if (Config.SETTINGS.enableLogging) {
                     var elementInfo = {
                         tag: elementToRemove.tagName,
-                        id: elementToRemove.id || '(pas d\'id)',
-                        class: elementToRemove.className || '(pas de classe)',
+                        id: elementToRemove.id || '(no id)',
+                        class: elementToRemove.className || '(no class)',
                         html: elementToRemove.outerHTML.substring(0, 200) + '...'
                     };
                     // eslint-disable-next-line no-console
-                    console.log('🧩 Extension Detector:   → Élément #' + (j + 1) + ' supprimé:', elementInfo);
+                    console.log('🧩 Extension Detector:   → Element #' + (j + 1) + ' removed:', elementInfo);
                 }
 
                 if (elementToRemove.parentNode) {
@@ -338,7 +268,7 @@ define([
                     removedCount++;
                 }
             } catch (error) {
-                // Échec silencieux
+                // Silent failure
             }
         }
 
@@ -346,13 +276,13 @@ define([
     };
 
     /**
-     * Scanne un Shadow Root pour un ID d'extension et supprime les éléments
+     * Scan a Shadow Root for an extension ID and remove elements
      * @memberof ExtensionDetector
      * @function _scanShadowRootForExtensionId
-     * @param {ShadowRoot} shadowRoot - Shadow Root à scanner
-     * @param {string} extensionKey - Clé de l'extension
-     * @param {string} extensionId - ID d'extension à rechercher
-     * @returns {number} Nombre d'éléments supprimés
+     * @param {ShadowRoot} shadowRoot - Shadow Root to scan
+     * @param {string} extensionKey - Extension key
+     * @param {string} extensionId - Extension ID to search for
+     * @returns {number} Number of elements removed
      * @private
      * @since 1.0.0
      */
@@ -373,27 +303,27 @@ define([
                     elementsToRemove.push(element);
                 }
 
-                // Scanner récursivement les Shadow DOM imbriqués
+                // Recursively scan nested Shadow DOMs
                 if (element.shadowRoot) {
                     removedCount += this._scanShadowRootForExtensionId(element.shadowRoot, extensionKey, extensionId);
                 }
             }
 
-            // Supprimer les éléments trouvés
+            // Remove found elements
             for (var j = 0; j < elementsToRemove.length; j++) {
                 var elementToRemove = elementsToRemove[j];
                 try {
-                    // Logger l'élément avant suppression si logging activé
+                    // Log element before removal if logging enabled
                     if (Config.SETTINGS.enableLogging) {
                         var elementInfo = {
                             tag: elementToRemove.tagName,
-                            id: elementToRemove.id || '(pas d\'id)',
-                            class: elementToRemove.className || '(pas de classe)',
+                            id: elementToRemove.id || '(no id)',
+                            class: elementToRemove.className || '(no class)',
                             html: elementToRemove.outerHTML.substring(0, 200) + '...',
                             location: 'Shadow DOM'
                         };
                         // eslint-disable-next-line no-console
-                        console.log('🧩 Extension Detector:   → Élément supprimé depuis Shadow DOM:', elementInfo);
+                        console.log('🧩 Extension Detector:   → Element removed from Shadow DOM:', elementInfo);
                     }
 
                     if (elementToRemove.parentNode) {
@@ -404,23 +334,23 @@ define([
                         removedCount++;
                     }
                 } catch (error) {
-                    // Échec silencieux
+                    // Silent failure
                 }
             }
         } catch (error) {
-            // Échec silencieux
+            // Silent failure
         }
 
         return removedCount;
     };
 
     /**
-     * Vérifie si un élément contient un ID d'extension spécifique
+     * Check if an element contains a specific extension ID
      * @memberof ExtensionDetector
      * @function _elementContainsExtensionId
-     * @param {Element} element - Élément à vérifier
-     * @param {string} extensionId - ID d'extension à rechercher
-     * @returns {boolean} True si l'élément contient l'ID d'extension
+     * @param {Element} element - Element to check
+     * @param {string} extensionId - Extension ID to search for
+     * @returns {boolean} True if element contains the extension ID
      * @private
      * @since 1.0.0
      */
@@ -433,12 +363,12 @@ define([
         var shadowHTML = element.shadowRoot ? element.shadowRoot.innerHTML : '';
         var combinedHTML = outerHTML + shadowHTML;
 
-        // Chercher l'ID d'extension dans le HTML
+        // Search for extension ID in HTML
         return combinedHTML.indexOf(extensionId) !== -1;
     };
 
     /**
-     * Réinitialise l'état de détection
+     * Reset detection state
      * @memberof ExtensionDetector
      * @function _resetState
      * @private
@@ -451,19 +381,19 @@ define([
     };
 
     /**
-     * Obtient les statistiques de détection avec métriques simplifiées
+     * Get detection statistics with simplified metrics
      * @memberof ExtensionDetector
      * @function getStatistics
-     * @returns {Object} Statistiques de détection
-     * @property {number} totalDetections - Nombre total de détections
-     * @property {number} uniquePaths - Nombre de chemins uniques
-     * @property {number} sessionDetections - Détections de session
-     * @property {string[]} detectedExtensionsList - Liste des extensions détectées
-     * @property {Object|null} lastDetection - Dernière détection
-     * @property {Object} metricsData - Données de métriques
+     * @returns {Object} Detection statistics
+     * @property {number} totalDetections - Total number of detections
+     * @property {number} uniquePaths - Number of unique paths
+     * @property {number} sessionDetections - Session detections
+     * @property {string[]} detectedExtensionsList - List of detected extensions
+     * @property {Object|null} lastDetection - Last detection
+     * @property {Object} metricsData - Metrics data
      * @example
      * const stats = detector.getStatistics();
-     * console.log('Extensions détectées:', stats.detectedExtensionsList);
+     * console.log('Detected extensions:', stats.detectedExtensionsList);
      * @since 1.0.0
      */
     ExtensionDetector.prototype.getStatistics = function() {
@@ -473,7 +403,7 @@ define([
         } catch (error) {
             if (Config.SETTINGS.enableLogging) {
                 // eslint-disable-next-line no-console
-                console.warn('🧩 Extension Detector: Impossible de lire les détections de session', error);
+                console.warn('🧩 Extension Detector: Unable to read session detections', error);
             }
         }
 
@@ -487,10 +417,10 @@ define([
     };
 
     /**
-     * Exporte les métriques au format JSON
+     * Export metrics as JSON
      * @memberof ExtensionDetector
      * @function exportMetricsAsJSON
-     * @returns {string} Chaîne JSON des métriques
+     * @returns {string} JSON string of metrics
      * @example
      * const jsonMetrics = detector.exportMetricsAsJSON();
      * const metrics = JSON.parse(jsonMetrics);
@@ -501,28 +431,28 @@ define([
     };
 
     /**
-     * Ajoute le support pour une nouvelle extension
+     * Add support for a new extension
      * @memberof ExtensionDetector
      * @function addExtensionSupport
-     * @param {string} extensionKey - Clé de l'extension
-     * @param {string} extensionName - Nom de l'extension
+     * @param {string} extensionKey - Extension key
+     * @param {string} extensionName - Extension name
      * @example
-     * detector.addExtensionSupport('newExt', 'Nouvelle Extension');
+     * detector.addExtensionSupport('newExt', 'New Extension');
      * @since 1.0.0
      */
     ExtensionDetector.prototype.addExtensionSupport = function(extensionKey, extensionName) {
         if (Config.SETTINGS.enableLogging) {
             // eslint-disable-next-line no-console
-            console.log('🧩 Extension Detector: Support ajouté pour l\'extension: ' + extensionName);
+            console.log('🧩 Extension Detector: Support added for extension: ' + extensionName);
         }
     };
 
     /**
-     * Obtient la configuration d'extension
+     * Get extension configuration
      * @memberof ExtensionDetector
      * @function getExtensionConfig
-     * @param {string} extensionKey - Clé de l'extension
-     * @returns {Object|null} Configuration de l'extension
+     * @param {string} extensionKey - Extension key
+     * @returns {Object|null} Extension configuration
      * @example
      * const config = detector.getExtensionConfig('crowdly');
      * @since 1.0.0
@@ -532,7 +462,7 @@ define([
     };
 
     /**
-     * Nettoie les ressources
+     * Cleanup resources
      * @memberof ExtensionDetector
      * @function cleanup
      * @example
@@ -542,19 +472,19 @@ define([
     ExtensionDetector.prototype.cleanup = function() {
         if (Config.SETTINGS.enableLogging) {
             // eslint-disable-next-line no-console
-            console.log('🧩 Extension Detector: Nettoyage des ressources');
+            console.log('🧩 Extension Detector: Cleaning up resources');
         }
 
         this.stop();
     };
 
     /**
-     * Enregistre un événement de détection
+     * Log a detection event
      * @memberof ExtensionDetector
      * @function _logDetection
-     * @param {string} extensionKey - Clé de l'extension
-     * @param {string} extensionName - Nom de l'extension
-     * @param {string} method - Méthode de détection
+     * @param {string} extensionKey - Extension key
+     * @param {string} extensionName - Extension name
+     * @param {string} method - Detection method
      * @private
      * @since 1.0.0
      */
@@ -578,7 +508,7 @@ define([
             sessionStorage.setItem('extensionDetections', JSON.stringify(history));
         } catch (error) {
             // eslint-disable-next-line no-console
-            console.warn('🧩 Extension Detector: Impossible d\'enregistrer l\'événement de détection', error);
+            console.warn('🧩 Extension Detector: Unable to save detection event', error);
         }
     };
 

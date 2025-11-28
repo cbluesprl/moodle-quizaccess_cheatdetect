@@ -1,5 +1,5 @@
 /**
- * @fileoverview Gestionnaire de navigateur pour la vérification des fichiers d'extension
+ * @fileoverview Browser handler for extension file verification
  * @module quizaccess_cheatdetect/extension-detector/browser
  * @copyright 2025 CBlue SRL <support@cblue.be>
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -14,29 +14,29 @@ define([
 
     /**
      * @typedef {Object} FileCheckResult
-     * @property {string} file - Nom du fichier vérifié
-     * @property {boolean} success - Succès de la vérification
-     * @property {boolean} detected - Fichier détecté avec succès
-     * @property {string} [reason] - Raison du résultat
-     * @property {string} [error] - Message d'erreur si échec
-     * @property {number} [contentLength] - Taille du contenu si disponible
-     * @property {boolean} [skipped] - Fichier ignoré (requête dupliquée)
+     * @property {string} file - Verified file name
+     * @property {boolean} success - Verification success
+     * @property {boolean} detected - File detected successfully
+     * @property {string} [reason] - Result reason
+     * @property {string} [error] - Error message if failed
+     * @property {number} [contentLength] - Content size if available
+     * @property {boolean} [skipped] - File skipped (duplicate request)
      */
 
     /**
      * @typedef {Object} AnalysisResult
-     * @property {boolean} success - Succès de l'analyse globale
-     * @property {number} totalFiles - Nombre total de fichiers vérifiés
-     * @property {number} successfulChecks - Nombre de vérifications réussies
-     * @property {number} detectedFiles - Nombre de fichiers détectés
-     * @property {number} failedChecks - Nombre de vérifications échouées
-     * @property {boolean} detected - Au moins un fichier détecté
-     * @property {FileCheckResult[]} results - Résultats détaillés
-     * @property {string[]} evidence - Liste des fichiers détectés (preuves)
+     * @property {boolean} success - Overall analysis success
+     * @property {number} totalFiles - Total number of files checked
+     * @property {number} successfulChecks - Number of successful checks
+     * @property {number} detectedFiles - Number of detected files
+     * @property {number} failedChecks - Number of failed checks
+     * @property {boolean} detected - At least one file detected
+     * @property {FileCheckResult[]} results - Detailed results
+     * @property {string[]} evidence - List of detected files (evidence)
      */
 
     /**
-     * Constructeur du gestionnaire de navigateur
+     * Browser handler constructor
      * @class BrowserHandler
      * @example
      * const handler = new BrowserHandler();
@@ -47,18 +47,18 @@ define([
     };
 
     /**
-     * Vérifie les fichiers d'extension spécifiés
+     * Check specified extension files
      * @memberof BrowserHandler
      * @function checkFiles
-     * @param {string} extensionPath - Chemin de base de l'extension
-     * @param {Object.<string, string[]>} filesToCheck - Fichiers à vérifier avec leurs motifs de contenu
-     * @returns {Promise<AnalysisResult>} Promesse qui résout avec les résultats d'analyse
+     * @param {string} extensionPath - Extension base path
+     * @param {Object.<string, string[]>} filesToCheck - Files to check with their content patterns
+     * @returns {Promise<AnalysisResult>} Promise resolving with analysis results
      * @example
      * handler.checkFiles('chrome-extension://abc123', {
      *   'manifest.json': ['"name"', '"version"'],
      *   'script.js': ['crowdly']
      * }).then(result => {
-     *   if (result.detected) console.log('Extension détectée!');
+     *   if (result.detected) console.log('Extension detected!');
      * });
      * @since 1.0.0
      */
@@ -66,7 +66,7 @@ define([
         var self = this;
 
         if (Config.SETTINGS.enableLogging) {
-            console.log('🧩 Extension Detector: Vérification de ' + Object.keys(filesToCheck).length + ' fichiers');
+            console.log('🧩 Extension Detector: Checking ' + Object.keys(filesToCheck).length + ' files');
         }
 
         return this._checkMultipleFiles(extensionPath, filesToCheck)
@@ -76,29 +76,31 @@ define([
     };
 
     /**
-     * Extrait l'ID d'extension du contenu
+     * Extract extension ID from content
      * @memberof BrowserHandler
      * @function extractExtensionId
-     * @param {string} content - Contenu à analyser
-     * @returns {string|null} URL d'extension extraite ou null
+     * @param {string} content - Content to analyze
+     * @returns {string|null} Extracted extension URL or null
      * @example
      * const id = handler.extractExtensionId('chrome-extension://abc123/script.js');
      * // "chrome-extension://abc123"
      * @since 1.0.0
      */
     BrowserHandler.prototype.extractExtensionId = function(content) {
-        if (!content) return null;
+        if (!content) {
+            return null;
+        }
 
         var match = content.match(Config.EXTENSION_URL_REGEX);
         return match ? match[0] : null;
     };
 
     /**
-     * Vérifie si le chemin d'extension est accessible
+     * Check if extension path is accessible
      * @memberof BrowserHandler
      * @function isExtensionAccessible
-     * @param {string} extensionPath - Chemin de l'extension à vérifier
-     * @returns {Promise<boolean>} Promesse qui résout avec true si accessible
+     * @param {string} extensionPath - Extension path to check
+     * @returns {Promise<boolean>} Promise resolving with true if accessible
      * @example
      * handler.isExtensionAccessible('chrome-extension://abc123')
      *   .then(accessible => {
@@ -115,12 +117,12 @@ define([
     };
 
     /**
-     * Vérifie plusieurs fichiers en parallèle
+     * Check multiple files in parallel
      * @memberof BrowserHandler
      * @function _checkMultipleFiles
-     * @param {string} extensionPath - Chemin de base de l'extension
-     * @param {Object.<string, string[]>} filesToCheck - Fichiers à vérifier
-     * @returns {Promise<FileCheckResult[]>} Promesse avec les résultats de tous les fichiers
+     * @param {string} extensionPath - Extension base path
+     * @param {Object.<string, string[]>} filesToCheck - Files to check
+     * @returns {Promise<FileCheckResult[]>} Promise with all file results
      * @private
      * @since 1.0.0
      */
@@ -136,13 +138,13 @@ define([
     };
 
     /**
-     * Vérifie un seul fichier avec validation de contenu
+     * Check a single file with content validation
      * @memberof BrowserHandler
      * @function _checkSingleFile
-     * @param {string} extensionPath - Chemin de base de l'extension
-     * @param {string} fileName - Nom du fichier à vérifier
-     * @param {string[]} contentChecks - Motifs à rechercher dans le contenu
-     * @returns {Promise<FileCheckResult>} Promesse avec le résultat de vérification
+     * @param {string} extensionPath - Extension base path
+     * @param {string} fileName - File name to check
+     * @param {string[]} contentChecks - Patterns to search in content
+     * @returns {Promise<FileCheckResult>} Promise with verification result
      * @private
      * @since 1.0.0
      */
@@ -151,7 +153,7 @@ define([
         var fileUrl = extensionPath + '/' + fileName;
         var requestId = extensionPath + ':' + fileName;
 
-        // Éviter les requêtes dupliquées
+        // Avoid duplicate requests
         if (this.activeRequests.has(requestId)) {
             return Promise.resolve({ file: fileName, skipped: true });
         }
@@ -171,17 +173,17 @@ define([
                     };
                 }
 
-                // Si aucune validation de contenu nécessaire, l'existence du fichier suffit
+                // If no content validation needed, file existence is enough
                 if (!contentChecks || contentChecks.length === 0) {
                     return {
                         file: fileName,
                         success: true,
                         detected: true,
-                        reason: 'Le fichier existe'
+                        reason: 'File exists'
                     };
                 }
 
-                // Valider le contenu du fichier
+                // Validate file content
                 return fetchResult.response.text().then(function(content) {
                     var detected = self._validateContent(content, contentChecks);
 
@@ -189,7 +191,7 @@ define([
                         file: fileName,
                         success: true,
                         detected: detected,
-                        reason: detected ? 'Validation du contenu réussie' : 'Validation du contenu échouée',
+                        reason: detected ? 'Content validation successful' : 'Content validation failed',
                         contentLength: content.length
                     };
                 });
@@ -206,30 +208,32 @@ define([
     };
 
     /**
-     * Valide le contenu du fichier contre les motifs spécifiés
+     * Validate file content against specified patterns
      * @memberof BrowserHandler
      * @function _validateContent
-     * @param {string} content - Contenu du fichier
-     * @param {string[]} patterns - Motifs à rechercher
-     * @returns {boolean} True si au moins un motif est trouvé
+     * @param {string} content - File content
+     * @param {string[]} patterns - Patterns to search
+     * @returns {boolean} True if at least one pattern is found
      * @private
      * @since 1.0.0
      */
     BrowserHandler.prototype._validateContent = function(content, patterns) {
-        if (!content || !patterns || patterns.length === 0) return false;
+        if (!content || !patterns || patterns.length === 0) {
+            return false;
+        }
 
-        // Vérifier si un motif est trouvé dans le contenu
+        // Check if a pattern is found in content
         return patterns.some(function(pattern) {
             return content.includes(pattern);
         });
     };
 
     /**
-     * Analyse les résultats de vérification des fichiers
+     * Analyze file verification results
      * @memberof BrowserHandler
      * @function _analyzeResults
-     * @param {FileCheckResult[]} results - Résultats bruts de vérification
-     * @returns {AnalysisResult} Analyse consolidée des résultats
+     * @param {FileCheckResult[]} results - Raw verification results
+     * @returns {AnalysisResult} Consolidated results analysis
      * @private
      * @since 1.0.0
      */
@@ -238,16 +242,16 @@ define([
         var detected = results.filter(function(r) { return r.detected; });
         var failed = results.filter(function(r) { return !r.success; });
 
-        // Logger les résultats pour le débogage
+        // Log results for debugging
         if (Config.SETTINGS.enableLogging) {
             if (detected.length > 0) {
                 var detectedFiles = detected.map(function(r) { return r.file; }).join(', ');
-                console.log('🧩 Extension Detector: Fichiers détectés - ' + detectedFiles);
+                console.log('🧩 Extension Detector: Files detected - ' + detectedFiles);
             }
 
             if (failed.length > 0) {
                 var failedFiles = failed.map(function(r) { return r.file; }).join(', ');
-                console.warn('🧩 Extension Detector: Vérifications de fichiers échouées - ' + failedFiles);
+                console.warn('🧩 Extension Detector: File checks failed - ' + failedFiles);
             }
         }
 
@@ -264,7 +268,7 @@ define([
     };
 
     /**
-     * Nettoie les requêtes actives
+     * Clean up active requests
      * @memberof BrowserHandler
      * @function cleanup
      * @example
@@ -273,7 +277,7 @@ define([
      */
     BrowserHandler.prototype.cleanup = function() {
         if (Config.SETTINGS.enableLogging) {
-            console.log('🧩 Extension Detector: Nettoyage de ' + this.activeRequests.size + ' requêtes actives');
+            console.log('🧩 Extension Detector: Cleaning up ' + this.activeRequests.size + ' active requests');
         }
         this.activeRequests.clear();
     };

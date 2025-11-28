@@ -1,5 +1,5 @@
 /**
- * @fileoverview Moniteur Shadow DOM pour la détection d'éléments d'extension
+ * @fileoverview Shadow DOM monitor for extension element detection
  * @module quizaccess_cheatdetect/extension-detector/shadow
  * @copyright 2025 CBlue SRL <support@cblue.be>
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -13,39 +13,39 @@ define([
 
     /**
      * @typedef {Object} ElementInfo
-     * @property {string} DOM - HTML externe de l'élément
-     * @property {string|null} shadowDOM - HTML du Shadow DOM si présent
-     * @property {string} detection - Méthode de détection utilisée
+     * @property {string} DOM - Element outer HTML
+     * @property {string|null} shadowDOM - Shadow DOM HTML if present
+     * @property {string} detection - Detection method used
      */
 
     /**
      * @typedef {Object} ShadowMonitorState
-     * @property {boolean} hasDetectedElements - Au moins un élément détecté
-     * @property {number} totalDetections - Nombre total de détections
+     * @property {boolean} hasDetectedElements - At least one element detected
+     * @property {number} totalDetections - Total number of detections
      */
 
     /**
-     * Constructeur du moniteur Shadow DOM
+     * Shadow DOM monitor constructor
      * @class ShadowMonitor
-     * @param {Function} onDetected - Callback appelé lors de la détection d'extension
+     * @param {Function} onDetected - Callback called when extension is detected
      * @example
      * const monitor = new ShadowMonitor((key, ext, method) => {
-     *   console.log('Extension détectée:', ext.name);
+     *   console.log('Extension detected:', ext.name);
      * });
      * @since 1.0.0
      */
     var ShadowMonitor = function(onDetected) {
         this.onDetected = onDetected;
-        this.onExtensionIdDetected = null; // Callback pour la détection d'ID
+        this.onExtensionIdDetected = null; // Callback for ID detection
         this.observers = new Map();
         this.processedShadowRoots = new WeakSet();
         this.detectedExtensions = new Set();
-        this.detectedExtensionIds = new Set(); // Pour éviter les détections dupliquées d'IDs
+        this.detectedExtensionIds = new Set(); // To avoid duplicate ID detections
         this.isActive = false;
         this.scanInterval = null;
         this.metricsManager = null;
 
-        // État des métriques simples
+        // Simple metrics state
         this.metricsState = {
             hasDetectedElements: false,
             totalDetections: 0
@@ -53,10 +53,10 @@ define([
     };
 
     /**
-     * Définit la référence du gestionnaire de métriques
+     * Set the metrics manager reference
      * @memberof ShadowMonitor
      * @function setMetricsManager
-     * @param {Object} metricsManager - Instance du gestionnaire de métriques
+     * @param {Object} metricsManager - Metrics manager instance
      * @example
      * monitor.setMetricsManager(metricsManagerInstance);
      * @since 1.0.0
@@ -66,13 +66,13 @@ define([
     };
 
     /**
-     * Définit le callback pour la détection d'ID d'extension
+     * Set the callback for extension ID detection
      * @memberof ShadowMonitor
      * @function setExtensionIdDetectedCallback
-     * @param {Function} callback - Callback appelé lors de la détection d'un ID d'extension
+     * @param {Function} callback - Callback called when extension ID is detected
      * @example
      * monitor.setExtensionIdDetectedCallback((extensionKey, extensionId, extensionPath) => {
-     *   console.log('ID détecté:', extensionId);
+     *   console.log('ID detected:', extensionId);
      * });
      * @since 1.0.0
      */
@@ -81,10 +81,10 @@ define([
     };
 
     /**
-     * Démarre la surveillance du DOM et Shadow DOM
+     * Start DOM and Shadow DOM monitoring
      * @memberof ShadowMonitor
      * @function start
-     * @throws {Error} Si le démarrage échoue
+     * @throws {Error} If startup fails
      * @example
      * monitor.start();
      * @since 1.0.0
@@ -102,13 +102,13 @@ define([
             this._startPeriodicScan();
         } catch (error) {
             // eslint-disable-next-line no-console
-            console.error('🧩 Extension Detector: Échec du démarrage de la surveillance', error);
+            console.error('🧩 Extension Detector: Failed to start monitoring', error);
             this.isActive = false;
         }
     };
 
     /**
-     * Démarre le scan périodique des éléments
+     * Start periodic element scanning
      * @memberof ShadowMonitor
      * @function _startPeriodicScan
      * @private
@@ -126,7 +126,7 @@ define([
     };
 
     /**
-     * Scanne tous les éléments du document
+     * Scan all document elements
      * @memberof ShadowMonitor
      * @function _scanAllElements
      * @private
@@ -148,13 +148,13 @@ define([
         } catch (error) {
             if (Config.SETTINGS.enableLogging) {
                 // eslint-disable-next-line no-console
-                console.warn('🧩 Extension Detector: Erreur pendant le scan périodique', error);
+                console.warn('🧩 Extension Detector: Error during periodic scan', error);
             }
         }
     };
 
     /**
-     * Crée un MutationObserver pour surveiller les changements DOM
+     * Create a MutationObserver to monitor DOM changes
      * @memberof ShadowMonitor
      * @function _createObserver
      * @private
@@ -207,11 +207,11 @@ define([
     };
 
     /**
-     * Vérifie et traite un élément pour détecter les extensions
+     * Check and process an element to detect extensions
      * @memberof ShadowMonitor
      * @function _checkAndProcessElement
-     * @param {Element} element - Élément à vérifier
-     * @returns {boolean} True si une extension a été détectée
+     * @param {Element} element - Element to check
+     * @returns {boolean} True if an extension was detected
      * @private
      * @since 1.0.0
      */
@@ -235,12 +235,12 @@ define([
     };
 
     /**
-     * Détecte si un élément appartient à une extension
+     * Detect if an element belongs to an extension
      * @memberof ShadowMonitor
      * @function _detectExtensionElement
-     * @param {Element} element - Élément à analyser
-     * @param {Object} extension - Configuration de l'extension
-     * @returns {boolean} True si l'élément appartient à l'extension
+     * @param {Element} element - Element to analyze
+     * @param {Object} extension - Extension configuration
+     * @returns {boolean} True if element belongs to the extension
      * @private
      * @since 1.0.0
      */
@@ -249,18 +249,18 @@ define([
             return false;
         }
 
-        // SÉCURITÉ: Ne jamais essayer de supprimer des éléments critiques
+        // SECURITY: Never try to remove critical elements
         if (element === document.body || element === document.documentElement ||
             element.tagName === 'BODY' || element.tagName === 'HTML' || element.tagName === 'HEAD') {
             return false;
         }
 
-        // 1. Vérifier d'abord par ID d'extension (statique ou dynamique)
+        // 1. First check by extension ID (static or dynamic)
         if (this._containsAnyExtensionId(element, extension)) {
             return true;
         }
 
-        // 2. Détecter par keywords/id/class et extraire l'ID d'extension si trouvé
+        // 2. Detect by keywords/id/class and extract extension ID if found
         var detectedByPattern = false;
 
         if (extension.textKeywords && element.textContent) {
@@ -287,15 +287,15 @@ define([
         if (!detectedByPattern && extension.patterns.classes && element.className) {
             var className = element.className.toLowerCase();
             for (var i = 0; i < extension.patterns.classes.length; i++) {
-                var pattern = extension.patterns.classes[i].toLowerCase();
-                if (className.includes(pattern)) {
+                var classPattern = extension.patterns.classes[i].toLowerCase();
+                if (className.includes(classPattern)) {
                     detectedByPattern = true;
                     break;
                 }
             }
         }
 
-        // Si détecté par pattern, essayer d'extraire l'ID d'extension
+        // If detected by pattern, try to extract extension ID
         if (detectedByPattern) {
             this._extractAndStoreExtensionId(element, extension);
             return true;
@@ -305,50 +305,50 @@ define([
     };
 
     /**
-     * Traite un élément détecté (enregistrement et suppression)
+     * Process a detected element (logging and removal)
      * @memberof ShadowMonitor
      * @function _processDetectedElement
-     * @param {string} extensionKey - Clé de l'extension
-     * @param {Element} element - Élément détecté
+     * @param {string} extensionKey - Extension key
+     * @param {Element} element - Detected element
      * @private
      * @since 1.0.0
      */
     ShadowMonitor.prototype._processDetectedElement = function(extensionKey, element) {
         this.metricsState.totalDetections++;
 
-        // Extraire les informations de l'élément
+        // Extract element information
         var elementInfo = this._extractElementInfo(element);
 
-        // Logger la détection (TOUJOURS)
+        // Log detection (ALWAYS)
         if (this.metricsManager) {
             this.metricsManager.logDetectedElement(extensionKey, elementInfo);
 
             if (Config.SETTINGS.enableLogging) {
 
-                console.log('🧩 Extension Detector: 🚨 ' + extensionKey + ' : élément détecté', elementInfo);
+                console.log('🧩 Extension Detector: 🚨 ' + extensionKey + ' : element detected', elementInfo);
             }
         }
 
-        // Essayer de supprimer si le paramètre le permet
+        // Try to remove if setting allows
         if (Config.SETTINGS.removeDetectedElements) {
             var removed = this._tryRemoveElement(element);
 
             if (removed) {
                 if (Config.SETTINGS.enableLogging) {
 
-                    // Console.log('🧩 Extension Detector: ✅ ' + extensionKey + ' : élément supprimé', elementInfo);
+                    // Console.log('🧩 Extension Detector: ✅ ' + extensionKey + ' : element removed', elementInfo);
                 }
             } else {
                 if (Config.SETTINGS.enableLogging) {
                     // eslint-disable-next-line no-console
                     console.log('🧩 Extension Detector: ❌ ' + extensionKey +
-                        ' - échec de suppression d\'élément', elementInfo);
+                        ' - element removal failed', elementInfo);
                 }
             }
         }
 
-        // CORRECTION: Notifier TOUJOURS lors de la première détection
-        // même si startDetection = false dans les paramètres backend
+        // FIX: ALWAYS notify on first detection
+        // even if startDetection = false in backend params
         if (!this.detectedExtensions.has(extensionKey)) {
             this.detectedExtensions.add(extensionKey);
             if (this.onDetected) {
@@ -359,38 +359,38 @@ define([
     };
 
     /**
-     * Extrait les informations pertinentes d'un élément détecté
+     * Extract relevant information from a detected element
      * @memberof ShadowMonitor
      * @function _extractElementInfo
-     * @param {Element} element - Élément à analyser
-     * @returns {ElementInfo} Informations extraites de l'élément
+     * @param {Element} element - Element to analyze
+     * @returns {ElementInfo} Information extracted from the element
      * @private
      * @since 1.0.0
      */
     ShadowMonitor.prototype._extractElementInfo = function(element) {
         var method = '';
 
-        // Déterminer la méthode basée sur ce qui a déclenché la détection
+        // Determine method based on what triggered detection
         var extensions = Config.getAllExtensions();
         for (var i = 0; i < extensions.length; i++) {
             var extension = extensions[i];
             if (this._containsAnyExtensionId(element, extension)) {
-                // Extraire juste l'ID d'extension trouvé dans l'élément
+                // Extract just the extension ID found in the element
                 var outerHTML = element.outerHTML;
                 var shadowHTML = element.shadowRoot ? element.shadowRoot.innerHTML : '';
                 var combinedHTML = outerHTML + shadowHTML;
                 var match = combinedHTML.match(Config.EXTENSION_URL_REGEX);
                 if (match && match[2]) {
-                    method = 'Extension de navigateur trouvée par son extension ID : ' + match[2];
+                    method = 'Browser extension found by extension ID: ' + match[2];
                 } else {
-                    method = 'Extension de navigateur trouvée';
+                    method = 'Browser extension found';
                 }
                 break;
             } else if (extension.textKeywords && element.textContent) {
                 var found = false;
                 for (var l = 0; l < extension.textKeywords.length; l++) {
                     if (element.textContent.includes(extension.textKeywords[l])) {
-                        method = 'Mot-clé texte trouvé : ' + extension.textKeywords[l];
+                        method = 'Text keyword found: ' + extension.textKeywords[l];
                         found = true;
                         break;
                     }
@@ -403,7 +403,7 @@ define([
                 for (var j = 0; j < extension.patterns.ids.length; j++) {
                     var pattern = extension.patterns.ids[j].toLowerCase();
                     if (elementId.includes(pattern)) {
-                        method = 'ID trouvé : ' + pattern;
+                        method = 'ID found: ' + pattern;
                         found = true;
                         break;
                     }
@@ -414,9 +414,9 @@ define([
             } else if (extension.patterns.classes && element.className) {
                 var className = element.className.toLowerCase();
                 for (var k = 0; k < extension.patterns.classes.length; k++) {
-                    var pattern = extension.patterns.classes[k].toLowerCase();
-                    if (className.includes(pattern)) {
-                        method = 'Classe trouvée : ' + pattern;
+                    var classPattern = extension.patterns.classes[k].toLowerCase();
+                    if (className.includes(classPattern)) {
+                        method = 'Class found: ' + classPattern;
                         found = true;
                         break;
                     }
@@ -435,11 +435,11 @@ define([
     };
 
     /**
-     * Essaie de supprimer un élément de manière sécurisée
+     * Try to safely remove an element
      * @memberof ShadowMonitor
      * @function _tryRemoveElement
-     * @param {Element} element - Élément à supprimer
-     * @returns {boolean} True si la suppression a réussi
+     * @param {Element} element - Element to remove
+     * @returns {boolean} True if removal succeeded
      * @private
      * @since 1.0.0
      */
@@ -462,18 +462,18 @@ define([
                 return true;
             }
         } catch (error) {
-            // Échec silencieux
+            // Silent failure
         }
         return false;
     };
 
     /**
-     * Vérifie si l'élément contient un ID d'extension (statique ou dynamique)
+     * Check if element contains an extension ID (static or dynamic)
      * @memberof ShadowMonitor
      * @function _containsAnyExtensionId
-     * @param {Element} element - Élément à vérifier
-     * @param {Object} extension - Configuration de l'extension
-     * @returns {boolean} True si un ID d'extension est trouvé
+     * @param {Element} element - Element to check
+     * @param {Object} extension - Extension configuration
+     * @returns {boolean} True if an extension ID is found
      * @private
      * @since 1.0.0
      */
@@ -487,24 +487,24 @@ define([
         var shadowHTML = element.shadowRoot ? element.shadowRoot.innerHTML : '';
         var combinedHTML = outerHTML + shadowHTML;
 
-        // Vérifier avec la regex pour détecter les URLs d'extension
+        // Check with regex to detect extension URLs
         var match = combinedHTML.match(Config.EXTENSION_URL_REGEX);
         if (!match) {
             return false;
         }
 
-        var foundExtensionId = match[2]; // L'ID extrait de la regex
+        var foundExtensionId = match[2]; // ID extracted from regex
 
-        // Vérifier si l'ID trouvé correspond à un des IDs configurés (statiques ou dynamiques)
+        // Check if found ID matches one of configured IDs (static or dynamic)
         return allIds.indexOf(foundExtensionId) !== -1;
     };
 
     /**
-     * Extrait l'ID d'extension du contenu d'un élément et le stocke
+     * Extract extension ID from element content and store it
      * @memberof ShadowMonitor
      * @function _extractAndStoreExtensionId
-     * @param {Element} element - Élément à analyser
-     * @param {Object} extension - Configuration de l'extension
+     * @param {Element} element - Element to analyze
+     * @param {Object} extension - Extension configuration
      * @private
      * @since 1.0.0
      */
@@ -513,32 +513,32 @@ define([
         var shadowHTML = element.shadowRoot ? element.shadowRoot.innerHTML : '';
         var combinedHTML = outerHTML + shadowHTML;
 
-        // Chercher toutes les occurrences d'URLs d'extension
+        // Search all extension URL occurrences
         var regex = new RegExp(Config.EXTENSION_URL_REGEX, 'g');
         var match;
 
         while ((match = regex.exec(combinedHTML)) !== null) {
-            var extensionProtocol = match[1]; // chrome-extension:// ou moz-extension://
+            var extensionProtocol = match[1]; // chrome-extension:// or moz-extension://
             var extensionId = match[2];
             var extensionPath = extensionProtocol + extensionId;
 
-            // Éviter de traiter plusieurs fois le même ID
+            // Avoid processing the same ID multiple times
             if (this.detectedExtensionIds.has(extensionPath)) {
                 continue;
             }
 
             this.detectedExtensionIds.add(extensionPath);
 
-            // Ajouter l'ID à la configuration
+            // Add ID to configuration
             var added = Config.addDetectedExtensionId(extension.key, extensionId);
 
             if (added && Config.SETTINGS.enableLogging) {
                 // eslint-disable-next-line no-console
-                console.log('🧩 Extension Detector: Nouvel ID d\'extension extrait pour ' +
-                    extension.name + ' : ' + extensionId);
+                console.log('🧩 Extension Detector: New extension ID extracted for ' +
+                    extension.name + ': ' + extensionId);
             }
 
-            // Notifier le détecteur principal pour supprimer tous les éléments avec cet ID
+            // Notify main detector to remove all elements with this ID
             if (this.onExtensionIdDetected && added) {
                 this.onExtensionIdDetected(extension.key, extensionId);
             }
@@ -546,14 +546,14 @@ define([
     };
 
     /**
-     * Vérifie l'ID d'extension avec regex multi-navigateur (legacy)
+     * Check extension ID with multi-browser regex (legacy)
      * @memberof ShadowMonitor
      * @function _containsSpecificExtensionId
-     * @param {Element} element - Élément à vérifier
-     * @param {Object} extension - Configuration de l'extension
-     * @returns {boolean} True si l'ID d'extension est trouvé
+     * @param {Element} element - Element to check
+     * @param {Object} extension - Extension configuration
+     * @returns {boolean} True if extension ID is found
      * @private
-     * @deprecated Utiliser _containsAnyExtensionId à la place
+     * @deprecated Use _containsAnyExtensionId instead
      * @since 1.0.0
      */
     ShadowMonitor.prototype._containsSpecificExtensionId = function(element, extension) {
@@ -561,10 +561,10 @@ define([
     };
 
     /**
-     * Gère un Shadow Root détecté
+     * Handle a detected Shadow Root
      * @memberof ShadowMonitor
      * @function _handleShadowRoot
-     * @param {Element} element - Élément contenant le Shadow Root
+     * @param {Element} element - Element containing the Shadow Root
      * @private
      * @since 1.0.0
      */
@@ -580,10 +580,10 @@ define([
     };
 
     /**
-     * Observe les changements dans un Shadow Root
+     * Observe changes in a Shadow Root
      * @memberof ShadowMonitor
      * @function _observeShadowRoot
-     * @param {ShadowRoot} shadowRoot - Shadow Root à observer
+     * @param {ShadowRoot} shadowRoot - Shadow Root to observe
      * @private
      * @since 1.0.0
      */
@@ -619,10 +619,10 @@ define([
     };
 
     /**
-     * Scanne tous les éléments d'un Shadow Root
+     * Scan all elements in a Shadow Root
      * @memberof ShadowMonitor
      * @function _scanShadowRoot
-     * @param {ShadowRoot} shadowRoot - Shadow Root à scanner
+     * @param {ShadowRoot} shadowRoot - Shadow Root to scan
      * @private
      * @since 1.0.0
      */
@@ -633,12 +633,12 @@ define([
                 this._checkAndProcessElement(elements[i], 'shadowDOM');
             }
         } catch (error) {
-            // Échec silencieux
+            // Silent failure
         }
     };
 
     /**
-     * Arrête la surveillance
+     * Stop monitoring
      * @memberof ShadowMonitor
      * @function stop
      * @example
@@ -661,7 +661,7 @@ define([
     };
 
     /**
-     * Nettoie les ressources utilisées
+     * Cleanup used resources
      * @memberof ShadowMonitor
      * @function _cleanup
      * @private
@@ -672,7 +672,7 @@ define([
             try {
                 observer.disconnect();
             } catch (error) {
-                // Échec silencieux
+                // Silent failure
             }
         });
 
@@ -682,7 +682,7 @@ define([
     };
 
     /**
-     * Réinitialise l'état du moniteur
+     * Reset monitor state
      * @memberof ShadowMonitor
      * @function reset
      * @example
