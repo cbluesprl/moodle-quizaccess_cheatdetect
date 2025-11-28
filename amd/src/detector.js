@@ -1,10 +1,10 @@
 /**
- * Cheat detection monitoring module, the module that is executed on every attemps page (where we will integrate local_insights logic)
- *
+ * @fileoverview Cheat detection monitoring module executed on every attempt page
  * @module     quizaccess_cheatdetect/detector
  * @copyright  2025 CBlue SRL
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- *  * @author      gnormand@cblue.be
+ * @author     gnormand@cblue.be
+ * @since      1.0.0
  */
 
 define(['jquery', 'core/ajax', 'core/notification'], function() {
@@ -12,7 +12,11 @@ define(['jquery', 'core/ajax', 'core/notification'], function() {
     var attemptId = null;
 
     /**
-     * Initialize the detector
+     * Initialize the detector module
+     * Retrieves the attempt ID from URL and sets up periodic logging
+     * @function init
+     * @returns {void}
+     * @since 1.0.0
      */
     var init = function() {
         // Get attempt ID from the page
@@ -28,7 +32,10 @@ define(['jquery', 'core/ajax', 'core/notification'], function() {
     };
 
     /**
-     * Get the attempt ID from the page
+     * Extract the attempt ID from the current page URL
+     * @function getAttemptId
+     * @returns {string|null} The attempt ID if found in URL, null otherwise
+     * @since 1.0.0
      */
     var getAttemptId = function() {
         var match = window.location.href.match(/attempt=(\d+)/);

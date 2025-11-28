@@ -22,6 +22,14 @@ define([
      * @property {number} [slot] - Numéro de slot de question
      */
 
+    /**
+     * Initialize the user activity tracking module
+     * Sets up event listeners and IndexedDB for storing tracking data
+     * @function init
+     * @param {BackendParams} backendParams - Configuration parameters from backend
+     * @returns {void}
+     * @since 1.0.0
+     */
     var init = function(backendParams) {
         // Ne rien faire si startDetection n'est pas explicitement true
         if (backendParams.startDetection !== true) {
@@ -38,7 +46,10 @@ define([
             let extensionDetectedDataAlreadySent = new Set();
 
             /**
-             *
+             * Retrieve current extension detection metrics
+             * @function getExtensionsMetrics
+             * @returns {Object} Extension detection metrics object
+             * @private
              */
             function getExtensionsMetrics() {
                 try {
@@ -60,7 +71,11 @@ define([
             }
 
             /**
-             *
+             * Check for newly detected extensions and log them
+             * Compares current metrics with already sent data to avoid duplicates
+             * @function checkForNewExtensions
+             * @returns {void}
+             * @private
              */
             function checkForNewExtensions() {
                 const currentExtensions = getExtensionsMetrics();
@@ -85,7 +100,11 @@ define([
             }
 
             /**
-             *
+             * Start periodic extension monitoring
+             * Checks for new extensions every 5 seconds
+             * @function startExtensionMonitoring
+             * @returns {void}
+             * @private
              */
             function startExtensionMonitoring() {
                 checkForNewExtensions();
@@ -99,7 +118,10 @@ define([
             }
 
             /**
-             *
+             * Stop extension monitoring interval
+             * @function stopExtensionMonitoring
+             * @returns {void}
+             * @private
              */
             function stopExtensionMonitoring() {
                 if (extensionCheckInterval) {
@@ -109,14 +131,20 @@ define([
             }
 
             /**
-             *
+             * Check if IndexedDB is available in the browser
+             * @function checkIndexedDBAvailability
+             * @returns {IDBFactory|undefined} IndexedDB factory or undefined
+             * @private
              */
             function checkIndexedDBAvailability() {
                 return window.indexedDB;
             }
 
             /**
-             *
+             * Initialize IndexedDB database for storing user activity events
+             * @function initIndexedDB
+             * @returns {Promise<void>} Promise that resolves when database is ready
+             * @private
              */
             function initIndexedDB() {
                 return new Promise((resolve, reject) => {
@@ -147,8 +175,13 @@ define([
             }
 
             /**
-             *
-             * @param newEvent
+             * Log a user activity event to IndexedDB
+             * @function logEvent
+             * @param {Object} newEvent - Event object to store
+             * @param {string} newEvent.action - Type of action (e.g., 'copy', 'page_load')
+             * @param {Object} newEvent.data - Additional event data
+             * @returns {void}
+             * @private
              */
             function logEvent(newEvent) {
                 if (db) {
@@ -167,8 +200,11 @@ define([
 
 
             /**
-             *
-             * @param event
+             * Track document visibility state changes (focus/blur)
+             * @function trackDocumentState
+             * @param {Event} event - Visibility change or focus/blur event
+             * @returns {void}
+             * @private
              */
             function trackDocumentState(event) {
                 const now = performance.now();
@@ -211,7 +247,11 @@ define([
 
             /**
              * Track copy events only within .qtext elements inside question divs
-             * @param event
+             * Only logs copies from question text areas to detect potential cheating
+             * @function trackCopy
+             * @param {ClipboardEvent} event - Copy event from document
+             * @returns {void}
+             * @private
              */
             function trackCopy(event) {
                 const selection = window.getSelection();
@@ -275,7 +315,11 @@ define([
 
 
             /**
-             *
+             * Initialize all tracking event listeners
+             * Sets up listeners for visibility, focus, copy, and unload events
+             * @function initTracking
+             * @returns {void}
+             * @private
              */
             function initTracking() {
                 if (window._trackingInitialized) {
@@ -325,7 +369,11 @@ define([
             }
 
             /**
-             *
+             * Send all stored events to the server via REST API
+             * Clears local storage after successful transmission
+             * @function flushEvents
+             * @returns {void}
+             * @private
              */
             function flushEvents() {
                 if (db) {
@@ -373,7 +421,11 @@ define([
             }
 
             /**
-             *
+             * Clear all stored events from IndexedDB
+             * Called after successful server transmission
+             * @function clearStoredEvents
+             * @returns {void}
+             * @private
              */
             function clearStoredEvents() {
                 const transaction = db.transaction("events", "readwrite");

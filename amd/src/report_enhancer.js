@@ -1,12 +1,14 @@
 /**
- * This JS is made to enhance the /mod/quiz/report.php?id=X&mode=overview core_moodle report table
- * and /mod/quiz/reviewquestion.php pages
+ * @fileoverview Report enhancer module for quiz cheat detection visualization
+ *
+ * This module enhances the /mod/quiz/report.php?id=X&mode=overview core Moodle report table
+ * and /mod/quiz/reviewquestion.php pages with cheat detection indicators and popovers.
  *
  * @module     quizaccess_cheatdetect/report_enhancer
- * @package
- * @copyright   2025 CBlue SPRL
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @author      gnormand@cblue.be, jdeboysere@cblue.be
+ * @copyright  2025 CBlue SPRL
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author     gnormand@cblue.be, jdeboysere@cblue.be
+ * @since      1.0.0
  */
 
 define(['jquery', 'core/ajax', 'core/notification', 'core/str', 'theme_boost/bootstrap/popover'],
@@ -646,6 +648,10 @@ function($, Ajax, Notification, Str, Popover) {
 
     /**
      * Enhance the report table with cheat detection information
+     * Adds data attributes, icons, and fetches cheat detection summaries
+     * @function enhanceReportTable
+     * @returns {Array|undefined} Array of attempt IDs or undefined if no table found
+     * @since 1.0.0
      */
     var enhanceReportTable = function() {
         // Find the report table
@@ -681,7 +687,11 @@ function($, Ajax, Notification, Str, Popover) {
     };
 
     /**
-     * Add icons next to "Relecture de cette tentative" links
+     * Add eye icons next to review attempt links
+     * Icons will be replaced with colored SVG icons after data is fetched
+     * @function addIconsToReviewLinks
+     * @returns {void}
+     * @since 1.0.0
      */
     var addIconsToReviewLinks = function() {
         // Find all review links
