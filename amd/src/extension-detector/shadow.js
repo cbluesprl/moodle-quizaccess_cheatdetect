@@ -324,7 +324,7 @@ define([
             this.metricsManager.logDetectedElement(extensionKey, elementInfo);
 
             if (Config.SETTINGS.enableLogging) {
-
+                // eslint-disable-next-line no-console
                 console.log('🧩 Extension Detector: 🚨 ' + extensionKey + ' : element detected', elementInfo);
             }
         }

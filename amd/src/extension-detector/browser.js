@@ -66,6 +66,7 @@ define([
         var self = this;
 
         if (Config.SETTINGS.enableLogging) {
+            // eslint-disable-next-line no-console
             console.log('🧩 Extension Detector: Checking ' + Object.keys(filesToCheck).length + ' files');
         }
 
@@ -246,11 +247,13 @@ define([
         if (Config.SETTINGS.enableLogging) {
             if (detected.length > 0) {
                 var detectedFiles = detected.map(function(r) { return r.file; }).join(', ');
+                // eslint-disable-next-line no-console
                 console.log('🧩 Extension Detector: Files detected - ' + detectedFiles);
             }
 
             if (failed.length > 0) {
                 var failedFiles = failed.map(function(r) { return r.file; }).join(', ');
+                // eslint-disable-next-line no-console
                 console.warn('🧩 Extension Detector: File checks failed - ' + failedFiles);
             }
         }
@@ -277,6 +280,7 @@ define([
      */
     BrowserHandler.prototype.cleanup = function() {
         if (Config.SETTINGS.enableLogging) {
+            // eslint-disable-next-line no-console
             console.log('🧩 Extension Detector: Cleaning up ' + this.activeRequests.size + ' active requests');
         }
         this.activeRequests.clear();

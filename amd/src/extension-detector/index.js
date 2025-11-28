@@ -52,6 +52,7 @@ define([
                 setTimeout(() => {
                     clearInterval(checkTracking);
                     if (!detectorInstance) {
+                        // eslint-disable-next-line no-console
                         console.warn('🧩 Extension Detector: Timeout, forced start without tracking');
                         startDetector();
                     }
@@ -64,6 +65,7 @@ define([
             }
 
         } catch (error) {
+            // eslint-disable-next-line no-console
             console.error('🧩 Extension Detector: Initialization error', error);
             return null;
         }
@@ -78,6 +80,7 @@ define([
     function startDetector() {
         try {
             if (detectorInstance) {
+                // eslint-disable-next-line no-console
                 console.log('🧩 Extension Detector: Instance already created');
                 return detectorInstance;
             }
@@ -86,10 +89,12 @@ define([
             detectorInstance = new ExtensionDetector.ExtensionDetector();
             detectorInstance.start();
 
+            // eslint-disable-next-line no-console
             console.log('🧩 Extension Detector: Started successfully');
             return detectorInstance;
 
         } catch (error) {
+            // eslint-disable-next-line no-console
             console.error('🧩 Extension Detector: Startup error', error);
             return null;
         }

@@ -33,6 +33,7 @@ define([
     var init = function(backendParams) {
         // Do nothing if startDetection is not explicitly true
         if (backendParams.startDetection !== true) {
+            // eslint-disable-next-line no-console
             console.log('Tracking disabled: startDetection !== true');
             return;
         }
@@ -57,6 +58,7 @@ define([
                     const metrics = JSON.parse(metricsJSON);
 
                     if (!metrics.timestamp || !metrics.extensionDetection) {
+                        // eslint-disable-next-line no-console
                         console.warn('Extension Detector: Invalid metrics structure received');
                         return {};
                     }
@@ -64,6 +66,7 @@ define([
                     return metrics.extensionDetection;
 
                 } catch (error) {
+                    // eslint-disable-next-line no-console
                     console.warn('Extension Detector: Error retrieving extension metrics:', error);
                     return {};
                 }
@@ -164,6 +167,7 @@ define([
                     };
 
                     request.onerror = (event) => {
+                        // eslint-disable-next-line no-console
                         console.error("Error opening IndexedDB:", event.target.error);
                         reject(event.target.error);
                     };
@@ -189,6 +193,7 @@ define([
                         ...newEvent
                     };
 
+                    // eslint-disable-next-line no-console
                     console.log('New user action stored', _newEvent);
                     objectStore.add(_newEvent);
                 }
@@ -318,6 +323,7 @@ define([
              */
             function initTracking() {
                 if (window._trackingInitialized) {
+                    // eslint-disable-next-line no-console
                     console.warn('Tracking already initialized, skipped');
                     return;
                 }
@@ -396,20 +402,25 @@ define([
                                 body: JSON.stringify(data)
                             }).then(response => {
                                 if (response.ok) {
+                                    // eslint-disable-next-line no-console
                                     console.log('User action(s) sent to server', data);
                                     clearStoredEvents();
                                 } else {
+                                    // eslint-disable-next-line no-console
                                     console.error('Error sending events');
                                 }
                             }).catch(error => {
+                                // eslint-disable-next-line no-console
                                 console.error('Network error:', error);
                             });
                         } else {
+                            // eslint-disable-next-line no-console
                             console.log('No user actions to save');
                         }
                     };
 
                     request.onerror = (error) => {
+                        // eslint-disable-next-line no-console
                         console.error("Error retrieving events from IndexedDB:", error);
                     };
                 }
@@ -434,6 +445,7 @@ define([
                     flushEvents();
                 }, 5000);
             }).catch((error) => {
+                // eslint-disable-next-line no-console
                 console.error("Failed to initialize IndexedDB:", error);
             });
         };
