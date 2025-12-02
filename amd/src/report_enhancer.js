@@ -910,10 +910,10 @@ function($, Ajax, Notification, Str, Popover) {
                 .append($focusLine)
                 .append($extensionLine);
 
-            // Insert the block after the .outcome element within the question element
-            var $outcomeContainer = $questionElement.find('.outcome');
-            if ($outcomeContainer.length > 0) {
-                $outcomeContainer.after($resumeBlock);
+            // Insert the block after the .formulation element within the question element
+            var $formulationContainer = $questionElement.find('.formulation');
+            if ($formulationContainer.length > 0) {
+                $formulationContainer.before($resumeBlock);
             } else {
                 // Fallback: insert at the top of the question element
                 $questionElement.prepend($resumeBlock);
