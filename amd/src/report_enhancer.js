@@ -197,6 +197,22 @@ function($, Ajax, Notification, Str, Popover) {
     };
 
     /**
+     * Extract attempt ID from URL query parameter
+     * @returns {string|null} Attempt ID from URL parameter or null if not found
+     */
+    var getAttemptIdFromUrl = function() {
+        var urlParams = new URLSearchParams(window.location.search);
+        var attemptId = urlParams.get('attempt');
+
+        if (!attemptId) {
+            console.warn('CheatDetect: No attempt parameter found in URL'); // eslint-disable-line no-console
+            return null;
+        }
+
+        return attemptId;
+    };
+
+    /**
      * Generate popover content HTML for a slot
      * @param {object} slotData Slot data from webservice
      * @param {object} strings Translated strings from language files
@@ -715,9 +731,16 @@ function($, Ajax, Notification, Str, Popover) {
     var enhanceReviewQuestionPage = function() {
         console.log('CheatDetect: Enhancing review question page'); // eslint-disable-line no-console
 
-        // Find all question elements with pattern #question-{attemptId}-{slotId}
+        // Get attemptId from URL parameter
+        var attemptId = getAttemptIdFromUrl();
+
+        if (!attemptId) {
+            console.warn('CheatDetect: Cannot enhance review page without attempt ID'); // eslint-disable-line no-console
+            return;
+        }
+
+        // Find all question elements with pattern #question-{number}-{number}
         var questionElements = $('[id^="question-"]').filter(function() {
-            // Match pattern: question-{number}-{number}
             return /^question-\d+-\d+$/.test(this.id);
         });
 
@@ -733,16 +756,14 @@ function($, Ajax, Notification, Str, Popover) {
             var $questionElement = $(this);
             var elementId = $questionElement.attr('id');
 
-            // Extract attemptId and slotId from the element ID
-            var matches = elementId.match(/^question-(\d+)-(\d+)$/);
+            // Extract slotId from element ID (attemptId comes from URL)
+            var matches = elementId.match(/^question-\d+-(\d+)$/);
             if (matches) {
-                var attemptId = matches[1];
-                var slotId = matches[2];
+                var slotId = matches[1];
 
                 // eslint-disable-next-line no-console
                 console.log('CheatDetect: Processing question element - attempt: ' + attemptId + ', slot: ' + slotId);
 
-                // Fetch attempt summary data for this specific question
                 fetchAttemptSummary(attemptId, slotId, $questionElement);
             }
         });
