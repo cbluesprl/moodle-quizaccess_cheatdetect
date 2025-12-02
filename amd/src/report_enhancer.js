@@ -214,6 +214,29 @@ function($, Ajax, Notification, Str, Popover) {
     };
 
     /**
+     * Get appropriate time spent string key based on time value
+     * @param {number} timeSpentSeconds Time spent in seconds
+     * @returns {object} Object with time value, unit type, and string key
+     */
+    var getTimeSpentStringKey = function(timeSpentSeconds) {
+        var timeInMinutes = timeSpentSeconds / 60;
+
+        if (timeInMinutes < 1) {
+            var seconds = Math.round(timeSpentSeconds);
+            return {
+                value: seconds,
+                key: seconds > 1 ? 'timespent_seconds_plural' : 'timespent_seconds'
+            };
+        } else {
+            var minutes = Math.round(timeInMinutes);
+            return {
+                value: minutes,
+                key: minutes > 1 ? 'timespent_minutes_plural' : 'timespent_minutes'
+            };
+        }
+    };
+
+    /**
      * Generate popover content HTML for a slot
      * @param {object} slotData Slot data from webservice
      * @param {object} strings Translated strings from language files
@@ -221,16 +244,16 @@ function($, Ajax, Notification, Str, Popover) {
      * @returns {string} HTML content for the popover
      */
     var generatePopoverContent = function(slotData, strings, slotId) {
-        // Calculate time in minutes
-        var timeInMinutes = Math.round(slotData.time_spent / 60);
+        // Calculate time with appropriate unit (seconds or minutes)
+        var timeInfo = getTimeSpentStringKey(slotData.time_spent);
         var timePercentage = Math.round(slotData.time_percentage);
 
         // Build HTML content as bullet list
         var html = '<ul class="mb-0">';
 
-        // Time spent (with slot number)
-        var timeSpentText = strings.timespent
-            .replace('{$a->minutes}', timeInMinutes)
+        // Time spent (with slot number) - use appropriate string based on time value
+        var timeSpentText = strings[timeInfo.key]
+            .replace('{$a->time}', timeInfo.value)
             .replace('{$a->percentage}', timePercentage)
             .replace('{$a->slot}', slotId);
         html += '<li>' + timeSpentText + '</li>';
@@ -484,7 +507,10 @@ function($, Ajax, Notification, Str, Popover) {
         // Load translated strings first
         var stringKeys = [
             {key: 'questiondetails', component: 'quizaccess_cheatdetect'},
-            {key: 'timespent', component: 'quizaccess_cheatdetect'},
+            {key: 'timespent_minutes', component: 'quizaccess_cheatdetect'},
+            {key: 'timespent_minutes_plural', component: 'quizaccess_cheatdetect'},
+            {key: 'timespent_seconds', component: 'quizaccess_cheatdetect'},
+            {key: 'timespent_seconds_plural', component: 'quizaccess_cheatdetect'},
             {key: 'copycount', component: 'quizaccess_cheatdetect'},
             {key: 'focuslosscount', component: 'quizaccess_cheatdetect'},
             {key: 'extensiondetected', component: 'quizaccess_cheatdetect'},
@@ -497,13 +523,16 @@ function($, Ajax, Notification, Str, Popover) {
             // Build strings object for easier access
             var strings = {
                 questiondetails: stringsArray[0],
-                timespent: stringsArray[1],
-                copycount: stringsArray[2],
-                focuslosscount: stringsArray[3],
-                extensiondetected: stringsArray[4],
-                yes: stringsArray[5],
-                no: stringsArray[6],
-                closepopover: stringsArray[7]
+                timespent_minutes: stringsArray[1],
+                timespent_minutes_plural: stringsArray[2],
+                timespent_seconds: stringsArray[3],
+                timespent_seconds_plural: stringsArray[4],
+                copycount: stringsArray[5],
+                focuslosscount: stringsArray[6],
+                extensiondetected: stringsArray[7],
+                yes: stringsArray[8],
+                no: stringsArray[9],
+                closepopover: stringsArray[10]
             };
 
             processAttemptSummariesWithStrings(summaries, strings);
@@ -808,13 +837,16 @@ function($, Ajax, Notification, Str, Popover) {
             return;
         }
 
-        // Convert time_spent from seconds to minutes
-        var timeInMinutes = Math.round(data.time_spent / 60);
+        // Calculate time with appropriate unit (seconds or minutes)
+        var timeInfo = getTimeSpentStringKey(data.time_spent);
         var timePercentage = Math.round(data.time_percentage);
 
         // Load translated strings
         var stringKeys = [
-            {key: 'timespent', component: 'quizaccess_cheatdetect'},
+            {key: 'timespent_minutes', component: 'quizaccess_cheatdetect'},
+            {key: 'timespent_minutes_plural', component: 'quizaccess_cheatdetect'},
+            {key: 'timespent_seconds', component: 'quizaccess_cheatdetect'},
+            {key: 'timespent_seconds_plural', component: 'quizaccess_cheatdetect'},
             {key: 'copycount', component: 'quizaccess_cheatdetect'},
             {key: 'focuslosscount', component: 'quizaccess_cheatdetect'},
             {key: 'extensiondetected', component: 'quizaccess_cheatdetect'},
@@ -822,43 +854,54 @@ function($, Ajax, Notification, Str, Popover) {
             {key: 'no', component: 'quizaccess_cheatdetect'}
         ];
 
-        Str.get_strings(stringKeys).then(function(strings) {
-            var timeSpentStr = strings[0];
-            var copyCountStr = strings[1];
-            var focusLossCountStr = strings[2];
-            var extensionDetectedStr = strings[3];
-            var yesStr = strings[4];
-            var noStr = strings[5];
+        Str.get_strings(stringKeys).then(function(stringsArray) {
+            var strings = {
+                timespent_minutes: stringsArray[0],
+                timespent_minutes_plural: stringsArray[1],
+                timespent_seconds: stringsArray[2],
+                timespent_seconds_plural: stringsArray[3],
+                copycount: stringsArray[4],
+                focuslosscount: stringsArray[5],
+                extensiondetected: stringsArray[6],
+                yes: stringsArray[7],
+                no: stringsArray[8]
+            };
 
             // Determine extension detection text
-            var extensionText = data.has_extension ? yesStr : noStr;
+            var extensionText = data.has_extension ? strings.yes : strings.no;
+
+            // Determine block color based on cheat_detected
+            var blockColorClass = 'cheatdetect_resume--gray';
+            if (data.cheat_detected !== undefined) {
+                blockColorClass = data.cheat_detected ? 'cheatdetect_resume--red' : 'cheatdetect_resume--green';
+            }
 
             // Create the resume block HTML
-            var $resumeBlock = $('<div>').addClass('cheatdetect_resume');
+            var $resumeBlock = $('<div>').addClass('cheatdetect_resume').addClass(blockColorClass);
 
-            // Time spent line (with slot number)
-            var timeSpentText = timeSpentStr
-                .replace('{$a->minutes}', timeInMinutes)
+            // Time spent line (with slot number) - use appropriate string based on time value
+            var timeSpentText = strings[timeInfo.key]
+                .replace('{$a->time}', timeInfo.value)
                 .replace('{$a->percentage}', timePercentage)
                 .replace('{$a->slot}', slotId);
             var $timeLine = $('<div>').text(timeSpentText);
 
             // Copy count line (add alert class if > 0)
-            var copyCountText = copyCountStr.replace('{$a}', data.copy_count);
+            var copyCountText = strings.copycount.replace('{$a}', data.copy_count);
             var $copyLine = $('<div>').text(copyCountText);
             if (data.copy_count > 0) {
                 $copyLine.addClass('cheatdetect-alert');
             }
 
             // Focus loss count line (add alert class if > 0)
-            var focusLossCountText = focusLossCountStr.replace('{$a}', data.focus_loss_count);
+            var focusLossCountText = strings.focuslosscount.replace('{$a}', data.focus_loss_count);
             var $focusLine = $('<div>').text(focusLossCountText);
             if (data.focus_loss_count > 0) {
                 $focusLine.addClass('cheatdetect-alert');
             }
 
             // Extension detection line
-            var extensionDetectedText = extensionDetectedStr.replace('{$a}', extensionText);
+            var extensionDetectedText = strings.extensiondetected.replace('{$a}', extensionText);
             var $extensionLine = $('<div>').text(extensionDetectedText);
 
             // Append all lines to the block
@@ -875,6 +918,11 @@ function($, Ajax, Notification, Str, Popover) {
                 // Fallback: insert at the top of the question element
                 $questionElement.prepend($resumeBlock);
             }
+
+            // Trigger fade-in animation after a small delay (allows CSS transition to work)
+            setTimeout(function() {
+                $resumeBlock.addClass('cheatdetect_resume--visible');
+            }, 50);
 
             // eslint-disable-next-line no-console
             console.log('CheatDetect: Resume block added to ' + $questionElement.attr('id'));
