@@ -274,7 +274,9 @@ define([
         }
 
         if (!detectedByPattern && extension.patterns.ids && element.id) {
-            var elementId = element.id.toLowerCase();
+            // Handle SVGAnimatedString (for SVG elements) or regular string
+            var rawId = typeof element.id === 'string' ? element.id : (element.id.baseVal || '');
+            var elementId = rawId.toLowerCase();
             for (var j = 0; j < extension.patterns.ids.length; j++) {
                 var pattern = extension.patterns.ids[j].toLowerCase();
                 if (elementId.includes(pattern)) {
@@ -285,7 +287,9 @@ define([
         }
 
         if (!detectedByPattern && extension.patterns.classes && element.className) {
-            var className = element.className.toLowerCase();
+            // Handle SVGAnimatedString (for SVG elements) or regular string
+            var rawClassName = typeof element.className === 'string' ? element.className : (element.className.baseVal || '');
+            var className = rawClassName.toLowerCase();
             for (var i = 0; i < extension.patterns.classes.length; i++) {
                 var classPattern = extension.patterns.classes[i].toLowerCase();
                 if (className.includes(classPattern)) {
