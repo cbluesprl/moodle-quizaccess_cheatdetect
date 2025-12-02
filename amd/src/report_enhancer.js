@@ -209,6 +209,7 @@ function($, Ajax, Notification, Str, Popover) {
             return null;
         }
 
+        console.log('CheatDetect: Attempt parameter found in URL (' + attemptId + ')'); // eslint-disable-line no-console
         return attemptId;
     };
 
