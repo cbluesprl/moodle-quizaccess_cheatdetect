@@ -214,26 +214,40 @@ function($, Ajax, Notification, Str, Popover) {
     };
 
     /**
-     * Get appropriate time spent string key based on time value
-     * @param {number} timeSpentSeconds Time spent in seconds
-     * @returns {object} Object with time value, unit type, and string key
+     * Format duration from seconds to human readable string
+     * Handles days, hours, minutes, seconds with proper singular/plural
+     * @param {number} totalSeconds Time spent in seconds
+     * @param {object} strings Translated strings containing day/days/hour/hours/minute/minutes/second/seconds
+     * @returns {string} Formatted duration string (e.g., "2 hours 30 minutes 15 seconds")
      */
-    var getTimeSpentStringKey = function(timeSpentSeconds) {
-        var timeInMinutes = timeSpentSeconds / 60;
+    var formatDuration = function(totalSeconds, strings) {
+        var days = Math.floor(totalSeconds / 86400);
+        var hours = Math.floor((totalSeconds % 86400) / 3600);
+        var minutes = Math.floor((totalSeconds % 3600) / 60);
+        var seconds = Math.floor(totalSeconds % 60);
 
-        if (timeInMinutes < 1) {
-            var seconds = Math.round(timeSpentSeconds);
-            return {
-                value: seconds,
-                key: seconds > 1 ? 'timespent_seconds_plural' : 'timespent_seconds'
-            };
-        } else {
-            var minutes = Math.round(timeInMinutes);
-            return {
-                value: minutes,
-                key: minutes > 1 ? 'timespent_minutes_plural' : 'timespent_minutes'
-            };
+        var parts = [];
+
+        if (days > 0) {
+            parts.push(days + ' ' + (days > 1 ? strings.days : strings.day));
         }
+        if (hours > 0) {
+            parts.push(hours + ' ' + (hours > 1 ? strings.hours : strings.hour));
+        }
+        if (minutes > 0) {
+            parts.push(minutes + ' ' + (minutes > 1 ? strings.minutes : strings.minute));
+        }
+        // Show seconds only if less than 1 hour, or if it's the only unit
+        if (seconds > 0 && (days === 0 && hours === 0) || parts.length === 0) {
+            parts.push(seconds + ' ' + (seconds > 1 ? strings.seconds : strings.second));
+        }
+
+        // If all values are 0, show "0 second"
+        if (parts.length === 0) {
+            parts.push('0 ' + strings.second);
+        }
+
+        return parts.join(' ');
     };
 
     /**
@@ -244,16 +258,16 @@ function($, Ajax, Notification, Str, Popover) {
      * @returns {string} HTML content for the popover
      */
     var generatePopoverContent = function(slotData, strings, slotId) {
-        // Calculate time with appropriate unit (seconds or minutes)
-        var timeInfo = getTimeSpentStringKey(slotData.time_spent);
+        // Format duration with appropriate units
+        var durationText = formatDuration(slotData.time_spent, strings);
         var timePercentage = Math.round(slotData.time_percentage);
 
         // Build HTML content as bullet list
         var html = '<ul class="mb-0">';
 
-        // Time spent (with slot number) - use appropriate string based on time value
-        var timeSpentText = strings[timeInfo.key]
-            .replace('{$a->time}', timeInfo.value)
+        // Time spent (with slot number)
+        var timeSpentText = strings.timespent
+            .replace('{$a->duration}', durationText)
             .replace('{$a->percentage}', timePercentage)
             .replace('{$a->slot}', slotId);
         html += '<li>' + timeSpentText + '</li>';
@@ -507,10 +521,15 @@ function($, Ajax, Notification, Str, Popover) {
         // Load translated strings first
         var stringKeys = [
             {key: 'questiondetails', component: 'quizaccess_cheatdetect'},
-            {key: 'timespent_minutes', component: 'quizaccess_cheatdetect'},
-            {key: 'timespent_minutes_plural', component: 'quizaccess_cheatdetect'},
-            {key: 'timespent_seconds', component: 'quizaccess_cheatdetect'},
-            {key: 'timespent_seconds_plural', component: 'quizaccess_cheatdetect'},
+            {key: 'timespent', component: 'quizaccess_cheatdetect'},
+            {key: 'day', component: 'quizaccess_cheatdetect'},
+            {key: 'days', component: 'quizaccess_cheatdetect'},
+            {key: 'hour', component: 'quizaccess_cheatdetect'},
+            {key: 'hours', component: 'quizaccess_cheatdetect'},
+            {key: 'minute', component: 'quizaccess_cheatdetect'},
+            {key: 'minutes', component: 'quizaccess_cheatdetect'},
+            {key: 'second', component: 'quizaccess_cheatdetect'},
+            {key: 'seconds', component: 'quizaccess_cheatdetect'},
             {key: 'copycount', component: 'quizaccess_cheatdetect'},
             {key: 'focuslosscount', component: 'quizaccess_cheatdetect'},
             {key: 'extensiondetected', component: 'quizaccess_cheatdetect'},
@@ -523,16 +542,21 @@ function($, Ajax, Notification, Str, Popover) {
             // Build strings object for easier access
             var strings = {
                 questiondetails: stringsArray[0],
-                timespent_minutes: stringsArray[1],
-                timespent_minutes_plural: stringsArray[2],
-                timespent_seconds: stringsArray[3],
-                timespent_seconds_plural: stringsArray[4],
-                copycount: stringsArray[5],
-                focuslosscount: stringsArray[6],
-                extensiondetected: stringsArray[7],
-                yes: stringsArray[8],
-                no: stringsArray[9],
-                closepopover: stringsArray[10]
+                timespent: stringsArray[1],
+                day: stringsArray[2],
+                days: stringsArray[3],
+                hour: stringsArray[4],
+                hours: stringsArray[5],
+                minute: stringsArray[6],
+                minutes: stringsArray[7],
+                second: stringsArray[8],
+                seconds: stringsArray[9],
+                copycount: stringsArray[10],
+                focuslosscount: stringsArray[11],
+                extensiondetected: stringsArray[12],
+                yes: stringsArray[13],
+                no: stringsArray[14],
+                closepopover: stringsArray[15]
             };
 
             processAttemptSummariesWithStrings(summaries, strings);
@@ -837,16 +861,19 @@ function($, Ajax, Notification, Str, Popover) {
             return;
         }
 
-        // Calculate time with appropriate unit (seconds or minutes)
-        var timeInfo = getTimeSpentStringKey(data.time_spent);
         var timePercentage = Math.round(data.time_percentage);
 
         // Load translated strings
         var stringKeys = [
-            {key: 'timespent_minutes', component: 'quizaccess_cheatdetect'},
-            {key: 'timespent_minutes_plural', component: 'quizaccess_cheatdetect'},
-            {key: 'timespent_seconds', component: 'quizaccess_cheatdetect'},
-            {key: 'timespent_seconds_plural', component: 'quizaccess_cheatdetect'},
+            {key: 'timespent', component: 'quizaccess_cheatdetect'},
+            {key: 'day', component: 'quizaccess_cheatdetect'},
+            {key: 'days', component: 'quizaccess_cheatdetect'},
+            {key: 'hour', component: 'quizaccess_cheatdetect'},
+            {key: 'hours', component: 'quizaccess_cheatdetect'},
+            {key: 'minute', component: 'quizaccess_cheatdetect'},
+            {key: 'minutes', component: 'quizaccess_cheatdetect'},
+            {key: 'second', component: 'quizaccess_cheatdetect'},
+            {key: 'seconds', component: 'quizaccess_cheatdetect'},
             {key: 'copycount', component: 'quizaccess_cheatdetect'},
             {key: 'focuslosscount', component: 'quizaccess_cheatdetect'},
             {key: 'extensiondetected', component: 'quizaccess_cheatdetect'},
@@ -856,15 +883,20 @@ function($, Ajax, Notification, Str, Popover) {
 
         Str.get_strings(stringKeys).then(function(stringsArray) {
             var strings = {
-                timespent_minutes: stringsArray[0],
-                timespent_minutes_plural: stringsArray[1],
-                timespent_seconds: stringsArray[2],
-                timespent_seconds_plural: stringsArray[3],
-                copycount: stringsArray[4],
-                focuslosscount: stringsArray[5],
-                extensiondetected: stringsArray[6],
-                yes: stringsArray[7],
-                no: stringsArray[8]
+                timespent: stringsArray[0],
+                day: stringsArray[1],
+                days: stringsArray[2],
+                hour: stringsArray[3],
+                hours: stringsArray[4],
+                minute: stringsArray[5],
+                minutes: stringsArray[6],
+                second: stringsArray[7],
+                seconds: stringsArray[8],
+                copycount: stringsArray[9],
+                focuslosscount: stringsArray[10],
+                extensiondetected: stringsArray[11],
+                yes: stringsArray[12],
+                no: stringsArray[13]
             };
 
             // Determine extension detection text
@@ -879,9 +911,12 @@ function($, Ajax, Notification, Str, Popover) {
             // Create the resume block HTML
             var $resumeBlock = $('<div>').addClass('cheatdetect_resume').addClass(blockColorClass);
 
-            // Time spent line (with slot number) - use appropriate string based on time value
-            var timeSpentText = strings[timeInfo.key]
-                .replace('{$a->time}', timeInfo.value)
+            // Format duration with appropriate units
+            var durationText = formatDuration(data.time_spent, strings);
+
+            // Time spent line (with slot number)
+            var timeSpentText = strings.timespent
+                .replace('{$a->duration}', durationText)
                 .replace('{$a->percentage}', timePercentage)
                 .replace('{$a->slot}', slotId);
             var $timeLine = $('<div>').text(timeSpentText);
