@@ -190,9 +190,6 @@ class SaveDataService extends Routes
         $metric->set('timemodified', time());
 
         $metric->save();
-
-        self::update_global_metric($context, 'focus_loss_count', 1);
-        self::handle_global_timing($context, $timestamp_seconds, 'focused', 'unfocused');
     }
 
     /**
@@ -219,8 +216,6 @@ class SaveDataService extends Routes
         $metric->set('timemodified', time());
 
         $metric->save();
-
-        self::handle_global_timing($context, $timestamp_seconds, 'unfocused', 'focused');
     }
 
     /**
@@ -239,12 +234,6 @@ class SaveDataService extends Routes
         $metric->set('timemodified', time());
 
         $metric->save();
-
-        $global_metric = self::get_or_create_metric($context['attemptid'], $context['userid'], $context['quizid'], null);
-        $global_metric->set('current_state', 'focused');
-        $global_metric->set('last_event_timestamp', $timestamp_seconds);
-        $global_metric->set('timemodified', time());
-        $global_metric->save();
     }
 
     /**
@@ -274,8 +263,6 @@ class SaveDataService extends Routes
         $metric->set('timemodified', time());
 
         $metric->save();
-
-        self::handle_global_timing($context, $timestamp_seconds, $metric->get('current_state'), null);
     }
 
     /**
@@ -297,8 +284,6 @@ class SaveDataService extends Routes
         $metric->set('extension_count', $metric->get('extension_count') + $extension_count);
         $metric->set('timemodified', time());
         $metric->save();
-
-        self::update_global_metric($context, 'extension_count', $extension_count);
     }
 
     /**
@@ -382,56 +367,6 @@ class SaveDataService extends Routes
         $metric->create();
 
         return $metric;
-    }
-
-    /**
-     * @param array $context
-     * @param string $field
-     * @param int $increment
-     * @return void
-     * @throws coding_exception
-     * @throws invalid_persistent_exception
-     */
-    private static function update_global_metric(array $context, string $field, int $increment): void
-    {
-        $global_metric = self::get_or_create_metric($context['attemptid'], $context['userid'], $context['quizid'], null);
-        $global_metric->set($field, $global_metric->get($field) + $increment);
-        $global_metric->set('timemodified', time());
-        $global_metric->save();
-    }
-
-    /**
-     * @param array $context
-     * @param int $timestamp_seconds
-     * @param string|null $previous_state
-     * @param string|null $new_state
-     * @return void
-     * @throws coding_exception
-     * @throws invalid_persistent_exception
-     */
-    private static function handle_global_timing(array $context, int $timestamp_seconds, ?string $previous_state, ?string $new_state): void
-    {
-        $global_metric = self::get_or_create_metric($context['attemptid'], $context['userid'], $context['quizid'], null);
-
-        if ($global_metric->get('last_event_timestamp') && $previous_state) {
-            $time_delta = $timestamp_seconds - $global_metric->get('last_event_timestamp');
-            if ($time_delta > 0 && $time_delta < 3600) {
-                if ($previous_state === 'focused') {
-                    $global_metric->set('time_focused', $global_metric->get('time_focused') + $time_delta);
-                } else if ($previous_state === 'unfocused') {
-                    $global_metric->set('time_unfocused', $global_metric->get('time_unfocused') + $time_delta);
-                }
-                $global_metric->set('time_total', $global_metric->get('time_total') + $time_delta);
-            }
-        }
-
-        if ($new_state !== null) {
-            $global_metric->set('current_state', $new_state);
-        }
-
-        $global_metric->set('last_event_timestamp', $timestamp_seconds);
-        $global_metric->set('timemodified', time());
-        $global_metric->save();
     }
 
     /**

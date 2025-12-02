@@ -68,7 +68,8 @@ class helper {
 
         $sql = "SELECT SUM(time_total) as total_time
                 FROM {" . metric::TABLE . "}
-                WHERE attemptid = :attemptid";
+                WHERE attemptid = :attemptid
+                AND slot IS NOT NULL";
 
         $result = $DB->get_record_sql($sql, ['attemptid' => $attemptid]);
 
@@ -154,7 +155,8 @@ class helper {
                     SUM(focus_loss_count) as total_focus_losses,
                     SUM(extension_count) as total_extensions
                 FROM {" . metric::TABLE . "}
-                WHERE attemptid = :attemptid";
+                WHERE attemptid = :attemptid
+                AND slot IS NOT NULL";
 
         $result = $DB->get_record_sql($sql, ['attemptid' => $attemptid]);
 
@@ -166,7 +168,10 @@ class helper {
             'total_extensions' => $result ? (int)$result->total_extensions : 0,
         ];
 
-        $summary['cheat_detected'] = ($result->total_copies + $result->total_focus_losses + $result->total_extensions) > 0;
+        $total_copies = $result ? (int)$result->total_copies : 0;
+        $total_focus_losses = $result ? (int)$result->total_focus_losses : 0;
+        $total_extensions = $result ? (int)$result->total_extensions : 0;
+        $summary['cheat_detected'] = ($total_copies + $total_focus_losses + $total_extensions) > 0;
 
         if ($summary['slot_count'] > 0) {
             $summary['avg_time'] = (int)($summary['total_time'] / $summary['slot_count']);

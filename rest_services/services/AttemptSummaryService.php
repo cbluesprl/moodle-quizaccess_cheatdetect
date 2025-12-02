@@ -22,6 +22,7 @@
 
 namespace quizaccess_cheatdetect\rest_services\services;
 
+use context_course;
 use local_rest\Routes;
 use stdClass;
 use quizaccess_cheatdetect\helper;
@@ -30,6 +31,24 @@ defined('MOODLE_INTERNAL') || die();
 
 class AttemptSummaryService extends Routes
 {
+    /**
+     * Check if current user has permission to view cheat detection reports for an attempt.
+     *
+     * @param int $attemptid The attempt ID
+     * @return void
+     * @throws \Exception If user doesn't have permission
+     */
+    private static function require_view_capability(int $attempt_id): void
+    {
+        global $DB;
+        $attempt = $DB->get_record('quiz_attempts', ['id' => $attempt_id], 'id, quiz', MUST_EXIST);
+        $quiz = $DB->get_record('quiz', ['id' => $attempt->quiz], 'id, course', MUST_EXIST);
+        $course_context = context_course::instance($quiz->course);
+        if (!has_capability('quizaccess/cheatdetect:viewcoursereports', $course_context)) {
+            throw new \Exception('Permission denied');
+        }
+    }
+
     /**
      * Get summary for an entire attempt.
      *
@@ -49,6 +68,9 @@ class AttemptSummaryService extends Routes
             }
 
             $attemptid = (int) $route_params->attemptid;
+
+            // Check permissions.
+            self::require_view_capability($attemptid);
 
             $summary = helper::get_attempt_summary($attemptid);
             $summary['has_extensions'] = helper::has_extensions($attemptid);
@@ -86,6 +108,8 @@ class AttemptSummaryService extends Routes
 
             $attemptid = (int) $route_params->attemptid;
             $slot = (int) $route_params->slot;
+
+            self::require_view_capability($attemptid);
 
             // Get metric for this specific slot.
             $metric = helper::get_slot_metric($attemptid, $slot);
@@ -158,6 +182,11 @@ class AttemptSummaryService extends Routes
             }
 
             $attemptids = array_map('intval', $payload->attemptids);
+
+            if (!empty($attemptids)) {
+                self::require_view_capability($attemptids[0]);
+            }
+
             $results = [];
 
             foreach ($attemptids as $attemptid) {

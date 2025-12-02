@@ -116,28 +116,33 @@ class quizaccess_cheatdetect extends quizaccess_cheat_detect_parent_class {
      */
     public function setup_attempt_page($page) {
         global $DB, $PAGE, $USER;
-
         // Check if we're on a quiz attempt page
-        $pagetype = $PAGE->pagetype;
-        if (strpos($pagetype, 'mod-quiz-attempt') !== 0) {
+        if (strpos($page->pagetype, 'mod-quiz-attempt') !== 0) {
             return;
         }
         $attemptid = optional_param('attempt', 0, PARAM_INT);
-        $page = optional_param('page', null, PARAM_INT);
-
+        // Page defaults to 0 (first page) when not specified in URL
+        $page_number = optional_param('page', 0, PARAM_INT);
         $sessionId = session_id();
         if (empty($sessionId)) {
             $sessionId = md5(uniqid(rand(), true));
         }
 
-        $slot = $DB->get_field('quiz_slots', 'slot', ['quizid' => $this->quiz->id, 'page' => $page]);
+        // In Moodle quiz_slots, pages are numbered starting from 1, but URL uses 0-based indexing
+        // So we need to add 1 to convert from URL page to DB page
+        $dbpage = $page_number + 1;
+        $slot = $DB->get_field('quiz_slots', 'slot', ['quizid' => $this->quiz->id, 'page' => $dbpage]);
+        // This can happen if questionsperpage > 1 (multiple questions per page)
+        if (!$slot) {
+            return;
+        }
 
         $params = [
             'sessionId' => $sessionId,
             'attemptid' => $attemptid,
             'userid' => $USER->id,
             'quizid' => $this->quiz->id,
-            'slot' => $slot,
+            'slot' => $slot ?: null,
             'startDetection' => true
         ];
 

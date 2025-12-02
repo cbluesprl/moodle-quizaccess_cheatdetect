@@ -18,13 +18,12 @@ function quizaccess_cheatdetect_before_footer() {
     // Check if we're on a quiz report page
     $pagetype = $PAGE->pagetype;
     $report_pages = ['mod-quiz-report', 'mod-quiz-reviewquestion', 'mod-quiz-review'];
-    $i = 0;
     $is_report_page = false;
-    while ($is_report_page == false && $i < count($report_pages)) {
-        if (strpos($pagetype, $report_pages[$i]) !== false) {
+    foreach ($report_pages as $report_page) {
+        if (strpos($pagetype, $report_page) !== false) {
             $is_report_page = true;
+            break;
         }
-        $i++;
     }
 
     if (!$is_report_page) {
@@ -41,10 +40,14 @@ function quizaccess_cheatdetect_before_footer() {
         return;
     }
 
+    $coursecontext = context_course::instance($cm->course);
+    if (!has_capability('quizaccess/cheatdetect:viewcoursereports', $coursecontext)) {
+        return;
+    }
+
     // Load JavaScript module
     $PAGE->requires->js_call_amd('quizaccess_cheatdetect/report_enhancer', 'init', [
         'cmid' => $cm->id,
         'quizid' => $cm->instance
-
     ]);
 }
