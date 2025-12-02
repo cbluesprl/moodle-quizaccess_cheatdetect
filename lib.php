@@ -9,18 +9,28 @@
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Callback to inject JavaScript into any page
+ * Callback to inject JavaScript into report pages
  * This is called before the page output
  */
 function quizaccess_cheatdetect_before_footer() {
-    global $PAGE, $DB;
+    global $PAGE;
 
     // Check if we're on a quiz report page
     $pagetype = $PAGE->pagetype;
-    if (strpos($pagetype, 'mod-quiz-report') !== 0
-        && strpos($pagetype, 'mod-quiz-reviewquestion') !== 0) {
+    $report_pages = ['mod-quiz-report', 'mod-quiz-reviewquestion', 'mod-quiz-review'];
+    $i = 0;
+    $is_report_page = false;
+    while ($is_report_page == false && $i < count($report_pages)) {
+        if (strpos($pagetype, $report_pages[$i]) !== false) {
+            $is_report_page = true;
+        }
+        $i++;
+    }
+
+    if (!$is_report_page) {
         return;
     }
+
     $context = $PAGE->context;
     if ($context->contextlevel != CONTEXT_MODULE) {
         return;
@@ -30,8 +40,8 @@ function quizaccess_cheatdetect_before_footer() {
     if (!$cm) {
         return;
     }
-    // Load JavaScript module
 
+    // Load JavaScript module
     $PAGE->requires->js_call_amd('quizaccess_cheatdetect/report_enhancer', 'init', [
         'cmid' => $cm->id,
         'quizid' => $cm->instance
