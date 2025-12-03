@@ -41,6 +41,7 @@ define([
         const userActivityTracker = () => {
             let db = null;
             let isCurrentlyFocused = !document.hidden;
+            let isUnloading = false;
 
             let extensionCheckInterval = null;
             let extensionDetectedDataAlreadySent = new Set();
@@ -199,7 +200,6 @@ define([
                 }
             }
 
-
             /**
              * Track document visibility state changes (focus/blur)
              * @function trackDocumentState
@@ -231,7 +231,8 @@ define([
                         logEvent(focusEvent);
                     }
                 } else if (type === 'blur') {
-                    if (isCurrentlyFocused) {
+                    // Skip if page is unloading to avoid spurious page_background before page_unload
+                    if (isCurrentlyFocused && !isUnloading) {
                         isCurrentlyFocused = false;
 
                         const blurEvent = {
@@ -355,6 +356,7 @@ define([
                 document.addEventListener("copy", (event) => trackCopy(event));
 
                 window.addEventListener("beforeunload", () => {
+                    isUnloading = true;
                     stopExtensionMonitoring();
 
                     const pageUnloadEvent = {
