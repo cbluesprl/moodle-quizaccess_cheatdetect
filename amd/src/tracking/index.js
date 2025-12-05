@@ -12,6 +12,8 @@ define([
 ], function(ExtensionDetector, SharedUtils) {
     'use strict';
 
+    const DEBUG_SHOW_CONSOLE_LOG = true;
+
     /**
      * @typedef {Object} BackendParams
      * @property {boolean} [startDetection=true] - Enable/disable tracking
@@ -30,18 +32,19 @@ define([
      * @returns {void}
      * @since 1.0.0
      */
-    var init = function(backendParams) {
+    const init = function(backendParams) {
         // Do nothing if startDetection is not explicitly true
         if (backendParams.startDetection !== true) {
-            // eslint-disable-next-line no-console
-            console.log('Tracking disabled: startDetection !== true');
+            if (DEBUG_SHOW_CONSOLE_LOG) {
+                // eslint-disable-next-line no-console
+                console.log('Tracking disabled: startDetection !== true');
+            }
             return;
         }
 
         const userActivityTracker = () => {
             let db = null;
             let isCurrentlyFocused = !document.hidden;
-            let isUnloading = false;
 
             let extensionCheckInterval = null;
             let extensionDetectedDataAlreadySent = new Set();
@@ -194,8 +197,10 @@ define([
                         ...newEvent
                     };
 
-                    // eslint-disable-next-line no-console
-                    console.log('New user action stored', _newEvent);
+                    if (DEBUG_SHOW_CONSOLE_LOG) {
+                        // eslint-disable-next-line no-console
+                        console.log('New user action stored', JSON.stringify(_newEvent, null, 2));
+                    }
                     objectStore.add(_newEvent);
                 }
             }
@@ -209,6 +214,12 @@ define([
              */
             function trackDocumentState(event) {
                 let type = event.type;
+
+                // Ignore blur/focus events from form elements (INPUT, BUTTON, etc.)
+                // We only care about window/document level visibility changes
+                if ((event.type === 'blur' || event.type === 'focus') && event.target !== window) {
+                    return;
+                }
 
                 if (event.type === 'visibilitychange') {
                     if (document.visibilityState === 'visible') {
@@ -231,8 +242,7 @@ define([
                         logEvent(focusEvent);
                     }
                 } else if (type === 'blur') {
-                    // Skip if page is unloading to avoid spurious page_background before page_unload
-                    if (isCurrentlyFocused && !isUnloading) {
+                    if (isCurrentlyFocused) {
                         isCurrentlyFocused = false;
 
                         const blurEvent = {
@@ -324,8 +334,10 @@ define([
              */
             function initTracking() {
                 if (window._trackingInitialized) {
-                    // eslint-disable-next-line no-console
-                    console.warn('Tracking already initialized, skipped');
+                    if (DEBUG_SHOW_CONSOLE_LOG) {
+                        // eslint-disable-next-line no-console
+                        console.warn('Tracking already initialized, skipped');
+                    }
                     return;
                 }
                 window._trackingInitialized = true;
@@ -356,7 +368,6 @@ define([
                 document.addEventListener("copy", (event) => trackCopy(event));
 
                 window.addEventListener("beforeunload", () => {
-                    isUnloading = true;
                     stopExtensionMonitoring();
 
                     const pageUnloadEvent = {
@@ -369,6 +380,27 @@ define([
                 });
 
                 trackDocumentState({type: 'visibilitychange'});
+            }
+
+            /**
+             * Filter out spurious page_background events caused by page navigation
+             * @function filterSpuriousEvents
+             * @param {Array} events - Array of events to filter
+             * @returns {Array} Filtered events array
+             * @private
+             */
+            function filterSpuriousEvents(events) {
+                return events.filter((event, index, arr) => {
+                    if (event.action === "page_background" && index < arr.length - 1) {
+                        const nextAction = arr[index + 1].action;
+                        // Remove page_background if immediately followed by page_unload or page_load
+                        // (page_load means it's an orphan from previous navigation)
+                        if (nextAction === "page_unload" || nextAction === "page_load") {
+                            return false;
+                        }
+                    }
+                    return true;
+                });
             }
 
             /**
@@ -385,7 +417,7 @@ define([
                     const request = objectStore.getAll();
 
                     request.onsuccess = () => {
-                        const events = request.result;
+                        const events = filterSpuriousEvents(request.result);
                         if (events.length > 0) {
                             const data = {
                                 session_id: backendParams.sessionId,
@@ -404,8 +436,10 @@ define([
                                 body: JSON.stringify(data)
                             }).then(response => {
                                 if (response.ok) {
-                                    // eslint-disable-next-line no-console
-                                    console.log('User action(s) sent to server', data);
+                                    if (DEBUG_SHOW_CONSOLE_LOG) {
+                                        // eslint-disable-next-line no-console
+                                        console.log('User action(s) sent to server', JSON.stringify(data, null, 2));
+                                    }
                                     clearStoredEvents();
                                 } else {
                                     // eslint-disable-next-line no-console
@@ -416,8 +450,10 @@ define([
                                 console.error('Network error:', error);
                             });
                         } else {
-                            // eslint-disable-next-line no-console
-                            console.log('No user actions to save');
+                            if (DEBUG_SHOW_CONSOLE_LOG) {
+                                // eslint-disable-next-line no-console
+                                console.log('No user actions to save');
+                            }
                         }
                     };
 
