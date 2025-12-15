@@ -13,8 +13,7 @@ defined('MOODLE_INTERNAL') || die();
  * This is called before the page output
  */
 function quizaccess_cheatdetect_before_footer() {
-    global $PAGE;
-
+    global $PAGE, $DB;
     // Check if we're on a quiz report page
     $pagetype = $PAGE->pagetype;
     $report_pages = ['mod-quiz-report', 'mod-quiz-reviewquestion', 'mod-quiz-review'];
@@ -45,9 +44,15 @@ function quizaccess_cheatdetect_before_footer() {
         return;
     }
 
+    $quiz = $DB->get_record('quiz', ['id' => $cm->instance]);
+    if (empty($quiz)) {
+        return;
+    }
+
     // Load JavaScript module
     $PAGE->requires->js_call_amd('quizaccess_cheatdetect/report_enhancer', 'init', [
         'cmid' => $cm->id,
-        'quizid' => $cm->instance
+        'quizid' => $cm->instance,
+        'questionsperpage' => $quiz->questionsperpage,
     ]);
 }

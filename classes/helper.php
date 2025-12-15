@@ -45,7 +45,15 @@ class helper {
     public static function get_slot_metric(int $attemptid, int $slot): ?metric {
         global $DB;
 
-        $record = $DB->get_record(metric::TABLE, [
+        $sql = "SELECT m.*,
+                    q.questionsperpage
+                FROM {" . metric::TABLE . "} m
+                JOIN {quiz_attempts} qa ON qa.id = m.attemptid
+                JOIN {quiz} q ON q.id = qa.quiz
+                WHERE m.attemptid = :attemptid
+                AND m.slot = :slot";
+
+        $record = $DB->get_record_sql($sql, [
             'attemptid' => $attemptid,
             'slot' => $slot
         ]);
@@ -150,13 +158,16 @@ class helper {
 
         $sql = "SELECT
                     COUNT(*) as slot_count,
-                    SUM(time_total) as total_time,
-                    SUM(copy_count) as total_copies,
-                    SUM(focus_loss_count) as total_focus_losses,
-                    SUM(extension_count) as total_extensions
-                FROM {" . metric::TABLE . "}
-                WHERE attemptid = :attemptid
-                AND slot IS NOT NULL";
+                    SUM(m.time_total) as total_time,
+                    SUM(m.copy_count) as total_copies,
+                    SUM(m.focus_loss_count) as total_focus_losses,
+                    SUM(m.extension_count) as total_extensions,
+                    q.questionsperpage
+                FROM {" . metric::TABLE . "} m
+                JOIN {quiz_attempts} qa ON qa.id = m.attemptid
+                JOIN {quiz} q ON q.id = qa.quiz
+                WHERE m.attemptid = :attemptid
+                AND m.slot IS NOT NULL";
 
         $result = $DB->get_record_sql($sql, ['attemptid' => $attemptid]);
 
@@ -166,6 +177,7 @@ class helper {
             'total_copies' => $result ? (int)$result->total_copies : 0,
             'total_focus_losses' => $result ? (int)$result->total_focus_losses : 0,
             'total_extensions' => $result ? (int)$result->total_extensions : 0,
+            'has_only_one_question_per_page' => $result && (int)$result->questionsperpage === 1,
         ];
 
         $total_copies = $result ? (int)$result->total_copies : 0;
