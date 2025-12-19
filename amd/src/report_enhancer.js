@@ -15,7 +15,14 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str', 'theme_boost/boo
 function($, Ajax, Notification, Str, Popover) {
 
     // Toggle between mock data and real webservice calls
-    var useMockData = false;
+    const USE_MOCK_DATA = true;
+
+    // Toggle console logging for debugging
+    const SHOW_CONSOLE_LOG = true;
+
+    if (USE_MOCK_DATA) {
+        console.warn('🚨 USE_MOCK_DATA set on TRUE. That means it will use fake data. 🚨');
+    }
 
     /**
      * Initialize the report enhancer
@@ -44,7 +51,9 @@ function($, Ajax, Notification, Str, Popover) {
         var attemptIds = [];
 
         if ($attemptsTable.length === 0) {
-            console.warn('CheatDetect: Attempts table not found'); // eslint-disable-line no-console
+            if (SHOW_CONSOLE_LOG) {
+                console.warn('CheatDetect: Attempts table not found'); // eslint-disable-line no-console
+            }
             return attemptIds;
         }
 
@@ -71,8 +80,10 @@ function($, Ajax, Notification, Str, Popover) {
                             $row.attr('data-cblue-attempt', attemptId);
                             // Add to the array (convert to integer)
                             attemptIds.push(parseInt(attemptId, 10));
-                            // eslint-disable-next-line no-console
-                            console.log('CheatDetect: Added data-cblue-attempt=' + attemptId + ' to row');
+                            if (SHOW_CONSOLE_LOG) {
+                                // eslint-disable-next-line no-console
+                                console.log('CheatDetect: Added data-cblue-attempt=' + attemptId + ' to row');
+                            }
                         }
                     }
                 }
@@ -97,8 +108,10 @@ function($, Ajax, Notification, Str, Popover) {
                     // Find the TD parent and add the data attribute
                     var $td = $link.closest('td');
                     $td.attr('data-cblue-slot', slotId);
-                    // eslint-disable-next-line no-console
-                    console.log('CheatDetect: Added data-cblue-slot=' + slotId + ' to TD');
+                    if (SHOW_CONSOLE_LOG) {
+                        // eslint-disable-next-line no-console
+                        console.log('CheatDetect: Added data-cblue-slot=' + slotId + ' to TD');
+                    }
                 }
             }
         });
@@ -110,23 +123,27 @@ function($, Ajax, Notification, Str, Popover) {
      */
     var fetchBulkAttemptSummaries = function(attemptIds) {
         if (!attemptIds || attemptIds.length === 0) {
-            console.warn('CheatDetect: No attempt IDs provided'); // eslint-disable-line no-console
+            if (SHOW_CONSOLE_LOG) {
+                console.warn('CheatDetect: No attempt IDs provided'); // eslint-disable-line no-console
+            }
             return;
         }
 
-        // Determine URL and method based on useMockData flag
-        var url = useMockData ?
+        // Determine URL and method based on USE_MOCK_DATA flag
+        var url = USE_MOCK_DATA ?
             M.cfg.wwwroot + '/mod/quiz/accessrule/cheatdetect/mockdata/bulk-attempt-summaries.json' :
             '/local/rest/api/quizaccess_cheatdetect/bulk-attempt-summaries';
 
-        var method = useMockData ? 'GET' : 'POST';
-        var payload = useMockData ? null : {attemptids: attemptIds};
+        var method = USE_MOCK_DATA ? 'GET' : 'POST';
+        var payload = USE_MOCK_DATA ? null : {attemptids: attemptIds};
 
-        if (useMockData) {
-            // eslint-disable-next-line no-console
-            console.log('CheatDetect: Using MOCK DATA from file for attempt IDs:', attemptIds);
-        } else {
-            console.log('CheatDetect: Fetching bulk attempt summaries for IDs:', attemptIds); // eslint-disable-line no-console
+        if (SHOW_CONSOLE_LOG) {
+            if (USE_MOCK_DATA) {
+                // eslint-disable-next-line no-console
+                console.log('CheatDetect: Using MOCK DATA from file for attempt IDs:', attemptIds);
+            } else {
+                console.log('CheatDetect: Fetching bulk attempt summaries for IDs:', attemptIds); // eslint-disable-line no-console
+            }
         }
 
         var ajaxConfig = {
@@ -134,22 +151,28 @@ function($, Ajax, Notification, Str, Popover) {
             method: method,
             dataType: 'json',
             success: function(response) {
-                // eslint-disable-next-line no-console
-                console.log('CheatDetect: Bulk attempt summaries response:', response);
+                if (SHOW_CONSOLE_LOG) {
+                    // eslint-disable-next-line no-console
+                    console.log('CheatDetect: Bulk attempt summaries response:', response);
+                }
                 if (response.success && response.data) {
                     processBulkAttemptSummaries(response.data);
                 } else {
-                    // eslint-disable-next-line no-console
-                    console.warn('CheatDetect: Invalid response from bulk summaries webservice', response);
+                    if (SHOW_CONSOLE_LOG) {
+                        // eslint-disable-next-line no-console
+                        console.warn('CheatDetect: Invalid response from bulk summaries webservice', response);
+                    }
                 }
             },
             error: function(xhr, status, error) {
-                console.error('CheatDetect: Error fetching bulk attempt summaries', error); // eslint-disable-line no-console
+                if (SHOW_CONSOLE_LOG) {
+                    console.error('CheatDetect: Error fetching bulk attempt summaries', error); // eslint-disable-line no-console
+                }
             }
         };
 
         // Add POST-specific parameters only for real webservice calls
-        if (!useMockData) {
+        if (!USE_MOCK_DATA) {
             ajaxConfig.contentType = 'application/json';
             ajaxConfig.data = JSON.stringify(payload);
         }
@@ -205,11 +228,15 @@ function($, Ajax, Notification, Str, Popover) {
         var attemptId = urlParams.get('attempt');
 
         if (!attemptId) {
-            console.warn('CheatDetect: No attempt parameter found in URL'); // eslint-disable-line no-console
+            if (SHOW_CONSOLE_LOG) {
+                console.warn('CheatDetect: No attempt parameter found in URL'); // eslint-disable-line no-console
+            }
             return null;
         }
 
-        console.log('CheatDetect: Attempt parameter found in URL (' + attemptId + ')'); // eslint-disable-line no-console
+        if (SHOW_CONSOLE_LOG) {
+            console.log('CheatDetect: Attempt parameter found in URL (' + attemptId + ')'); // eslint-disable-line no-console
+        }
         return attemptId;
     };
 
@@ -417,8 +444,10 @@ function($, Ajax, Notification, Str, Popover) {
         // Setup close handlers
         setupPopoverCloseHandlers();
 
-        // eslint-disable-next-line no-console
-        console.log('CheatDetect: Initialized ' + $popoverElements.length + ' Bootstrap popovers');
+        if (SHOW_CONSOLE_LOG) {
+            // eslint-disable-next-line no-console
+            console.log('CheatDetect: Initialized ' + $popoverElements.length + ' Bootstrap popovers');
+        }
     };
 
     /**
@@ -516,7 +545,9 @@ function($, Ajax, Notification, Str, Popover) {
      * @param {Array} summaries Array of attempt summaries from webservice
      */
     var processBulkAttemptSummaries = function(summaries) {
-        console.log('CheatDetect: Processing ' + summaries.length + ' attempt summaries'); // eslint-disable-line no-console
+        if (SHOW_CONSOLE_LOG) {
+            console.log('CheatDetect: Processing ' + summaries.length + ' attempt summaries'); // eslint-disable-line no-console
+        }
 
         // Load translated strings first
         var stringKeys = [
@@ -561,7 +592,9 @@ function($, Ajax, Notification, Str, Popover) {
 
             processAttemptSummariesWithStrings(summaries, strings);
         }).catch(function(error) {
-            console.error('CheatDetect: Error loading strings', error); // eslint-disable-line no-console
+            if (SHOW_CONSOLE_LOG) {
+                console.error('CheatDetect: Error loading strings', error); // eslint-disable-line no-console
+            }
         });
     };
 
@@ -579,19 +612,25 @@ function($, Ajax, Notification, Str, Popover) {
             var $row = $('tr[data-cblue-attempt="' + attemptId + '"]');
 
             if ($row.length === 0) {
-                console.warn('CheatDetect: Row not found for attempt ' + attemptId); // eslint-disable-line no-console
+                if (SHOW_CONSOLE_LOG) {
+                    console.warn('CheatDetect: Row not found for attempt ' + attemptId); // eslint-disable-line no-console
+                }
                 return;
             }
 
-            // eslint-disable-next-line no-console
-            console.log('CheatDetect: Processing attempt ' + attemptId + ' with ' + slots.length + ' slots');
+            if (SHOW_CONSOLE_LOG) {
+                // eslint-disable-next-line no-console
+                console.log('CheatDetect: Processing attempt ' + attemptId + ' with ' + slots.length + ' slots');
+            }
 
             var hasRedSlot = false;
 
             // If slots array is empty, we need to add gray icons to all TDs with data-cblue-slot
             if (!slots || slots.length === 0) {
-                // eslint-disable-next-line no-console
-                console.log('CheatDetect: No slot data for attempt ' + attemptId + ', using gray icons');
+                if (SHOW_CONSOLE_LOG) {
+                    // eslint-disable-next-line no-console
+                    console.log('CheatDetect: No slot data for attempt ' + attemptId + ', using gray icons');
+                }
 
                 $row.find('td[data-cblue-slot]').each(function() {
                     var $td = $(this);
@@ -629,8 +668,10 @@ function($, Ajax, Notification, Str, Popover) {
                             .append($icon);
 
                         $td.append($iconButton);
-                        // eslint-disable-next-line no-console
-                        console.log('CheatDetect: Added gray icon for slot ' + slotId);
+                        if (SHOW_CONSOLE_LOG) {
+                            // eslint-disable-next-line no-console
+                            console.log('CheatDetect: Added gray icon for slot ' + slotId);
+                        }
                     }
                 });
             } else {
@@ -642,8 +683,10 @@ function($, Ajax, Notification, Str, Popover) {
                     var $td = $row.find('td[data-cblue-slot="' + slotId + '"]');
 
                     if ($td.length === 0) {
-                        // eslint-disable-next-line no-console
-                        console.warn('CheatDetect: TD not found for attempt ' + attemptId + ' slot ' + slotId);
+                        if (SHOW_CONSOLE_LOG) {
+                            // eslint-disable-next-line no-console
+                            console.warn('CheatDetect: TD not found for attempt ' + attemptId + ' slot ' + slotId);
+                        }
                         return;
                     }
 
@@ -680,9 +723,11 @@ function($, Ajax, Notification, Str, Popover) {
                             .append($icon);
 
                         $td.append($iconButton);
-                        // eslint-disable-next-line no-console
-                        console.log('CheatDetect: Added ' + iconColor + ' icon for slot ' + slotId +
-                                    ' (cheat_detected: ' + slotData.cheat_detected + ')');
+                        if (SHOW_CONSOLE_LOG) {
+                            // eslint-disable-next-line no-console
+                            console.log('CheatDetect: Added ' + iconColor + ' icon for slot ' + slotId +
+                                        ' (cheat_detected: ' + slotData.cheat_detected + ')');
+                        }
                     }
                 });
             }
@@ -697,14 +742,18 @@ function($, Ajax, Notification, Str, Popover) {
                     var summaryColor = (!slots || slots.length === 0) ? 'gray' : (hasRedSlot ? 'red' : 'green');
                     var $newEyeIcon = createSvgIcon(summaryColor, 'summary');
                     $oldEyeIcon.replaceWith($newEyeIcon);
-                    // eslint-disable-next-line no-console
-                    console.log('CheatDetect: Replaced summary icon for attempt ' + attemptId +
-                                ' (color: ' + summaryColor + ')');
+                    if (SHOW_CONSOLE_LOG) {
+                        // eslint-disable-next-line no-console
+                        console.log('CheatDetect: Replaced summary icon for attempt ' + attemptId +
+                                    ' (color: ' + summaryColor + ')');
+                    }
                 }
             }
         });
 
-        console.log('CheatDetect: Finished processing all attempt summaries'); // eslint-disable-line no-console
+        if (SHOW_CONSOLE_LOG) {
+            console.log('CheatDetect: Finished processing all attempt summaries'); // eslint-disable-line no-console
+        }
 
         // Initialize popovers with sanitize: false to allow red color styles
         initializePopovers();
@@ -722,11 +771,15 @@ function($, Ajax, Notification, Str, Popover) {
         var domtable = $('table.generaltable');
 
         if (domtable.length === 0) {
-            console.warn('CheatDetect: Report table not found'); // eslint-disable-line no-console
+            if (SHOW_CONSOLE_LOG) {
+                console.warn('CheatDetect: Report table not found'); // eslint-disable-line no-console
+            }
             return;
         }
 
-        console.log('CheatDetect: Enhancing report table'); // eslint-disable-line no-console
+        if (SHOW_CONSOLE_LOG) {
+            console.log('CheatDetect: Enhancing report table'); // eslint-disable-line no-console
+        }
 
         // Add data-cblue-attempt attributes to table rows and collect attempt IDs
         var attemptIds = addAttemptDataAttributes();
@@ -739,7 +792,9 @@ function($, Ajax, Notification, Str, Popover) {
 
         // Fetch bulk attempt summaries if we have attempt IDs
         if (attemptIds.length === 0) {
-            console.warn('CheatDetect: No attempts found'); // eslint-disable-line no-console
+            if (SHOW_CONSOLE_LOG) {
+                console.warn('CheatDetect: No attempts found'); // eslint-disable-line no-console
+            }
             return;
         }
 
@@ -783,13 +838,17 @@ function($, Ajax, Notification, Str, Popover) {
      * Finds all #question-X-Y elements and injects summary blocks
      */
     var enhanceReviewQuestionPage = function() {
-        console.log('CheatDetect: Enhancing review question page'); // eslint-disable-line no-console
+        if (SHOW_CONSOLE_LOG) {
+            console.log('CheatDetect: Enhancing review question page'); // eslint-disable-line no-console
+        }
 
         // Get attemptId from URL parameter
         var attemptId = getAttemptIdFromUrl();
 
         if (!attemptId) {
-            console.warn('CheatDetect: Cannot enhance review page without attempt ID'); // eslint-disable-line no-console
+            if (SHOW_CONSOLE_LOG) {
+                console.warn('CheatDetect: Cannot enhance review page without attempt ID'); // eslint-disable-line no-console
+            }
             return;
         }
 
@@ -799,11 +858,15 @@ function($, Ajax, Notification, Str, Popover) {
         });
 
         if (questionElements.length === 0) {
-            console.warn('CheatDetect: No question elements found'); // eslint-disable-line no-console
+            if (SHOW_CONSOLE_LOG) {
+                console.warn('CheatDetect: No question elements found'); // eslint-disable-line no-console
+            }
             return;
         }
 
-        console.log('CheatDetect: Found ' + questionElements.length + ' question elements'); // eslint-disable-line no-console
+        if (SHOW_CONSOLE_LOG) {
+            console.log('CheatDetect: Found ' + questionElements.length + ' question elements'); // eslint-disable-line no-console
+        }
 
         // Process each question element
         questionElements.each(function() {
@@ -815,8 +878,10 @@ function($, Ajax, Notification, Str, Popover) {
             if (matches) {
                 var slotId = matches[1];
 
-                // eslint-disable-next-line no-console
-                console.log('CheatDetect: Processing question element - attempt: ' + attemptId + ', slot: ' + slotId);
+                if (SHOW_CONSOLE_LOG) {
+                    // eslint-disable-next-line no-console
+                    console.log('CheatDetect: Processing question element - attempt: ' + attemptId + ', slot: ' + slotId);
+                }
 
                 fetchAttemptSummary(attemptId, slotId, $questionElement);
             }
@@ -840,11 +905,15 @@ function($, Ajax, Notification, Str, Popover) {
                 if (response.success && response.data) {
                     createCheatDetectResumeBlock(response.data, $questionElement, slotId);
                 } else {
-                    console.warn('CheatDetect: Invalid response from webservice', response); // eslint-disable-line no-console
+                    if (SHOW_CONSOLE_LOG) {
+                        console.warn('CheatDetect: Invalid response from webservice', response); // eslint-disable-line no-console
+                    }
                 }
             },
             error: function(xhr, status, error) {
-                console.error('CheatDetect: Error fetching attempt summary', error); // eslint-disable-line no-console
+                if (SHOW_CONSOLE_LOG) {
+                    console.error('CheatDetect: Error fetching attempt summary', error); // eslint-disable-line no-console
+                }
             }
         });
     };
@@ -959,10 +1028,14 @@ function($, Ajax, Notification, Str, Popover) {
                 $resumeBlock.addClass('cheatdetect_resume--visible');
             }, 50);
 
-            // eslint-disable-next-line no-console
-            console.log('CheatDetect: Resume block added to ' + $questionElement.attr('id'));
+            if (SHOW_CONSOLE_LOG) {
+                // eslint-disable-next-line no-console
+                console.log('CheatDetect: Resume block added to ' + $questionElement.attr('id'));
+            }
         }).catch(function(error) {
-            console.error('CheatDetect: Error loading strings', error); // eslint-disable-line no-console
+            if (SHOW_CONSOLE_LOG) {
+                console.error('CheatDetect: Error loading strings', error); // eslint-disable-line no-console
+            }
         });
     };
 
