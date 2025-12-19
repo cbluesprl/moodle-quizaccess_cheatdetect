@@ -121,3 +121,10 @@
 .popover-body .fw-bold {
     font-weight: 700 !important;
 }
+
+button:has(> img[data-cblue-spyicon="summary"])  {
+    margin-left: 8px;
+}
+button:has(> img[data-cblue-spyicon="summary"]) > img[data-cblue-spyicon="summary"] {
+    margin-left: 0;
+}

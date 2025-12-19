@@ -20,7 +20,7 @@ $string['eventsdetected'] = '{$a} événement(s) suspect(s) détecté(s)';
 $string['layoutwarning'] = 'Attention, dans cette configuration, le plugin de détection de triche ne peut pas fonctionner. Pour l\'utiliser, veuillez sélectionner le paramètre "Chaque question".';
 
 // Review question page - summary block
-$string['questiondetails'] = 'Détails de la question';
+$string['questiondetails'] = 'Détection de triche - Détails de la question';
 $string['timespent'] = 'L\'utilisateur a passé {$a->duration} ({$a->percentage}% du quiz) sur la question {$a->slot}';
 $string['day'] = 'jour';
 $string['days'] = 'jours';
@@ -36,3 +36,4 @@ $string['extensiondetected'] = 'Détection d\'extension de triche : {$a}';
 $string['yes'] = 'Oui';
 $string['no'] = 'Non';
 $string['closepopover'] = 'Fermer';
+$string['multiplepageswarning'] = 'Détection de triche indisponible : le quiz doit afficher une seule question par page.';

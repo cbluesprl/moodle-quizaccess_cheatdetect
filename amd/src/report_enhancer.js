@@ -15,10 +15,10 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/str', 'theme_boost/boo
 function($, Ajax, Notification, Str, Popover) {
 
     // Toggle between mock data and real webservice calls
-    const USE_MOCK_DATA = true;
+    const USE_MOCK_DATA = false;
 
     // Toggle console logging for debugging
-    const SHOW_CONSOLE_LOG = true;
+    const SHOW_CONSOLE_LOG = false;
 
     if (USE_MOCK_DATA) {
         console.warn('🚨 USE_MOCK_DATA set on TRUE. That means it will use fake data. 🚨');
@@ -566,7 +566,9 @@ function($, Ajax, Notification, Str, Popover) {
             {key: 'extensiondetected', component: 'quizaccess_cheatdetect'},
             {key: 'yes', component: 'quizaccess_cheatdetect'},
             {key: 'no', component: 'quizaccess_cheatdetect'},
-            {key: 'closepopover', component: 'quizaccess_cheatdetect'}
+            {key: 'closepopover', component: 'quizaccess_cheatdetect'},
+            {key: 'multiplepageswarning', component: 'quizaccess_cheatdetect'},
+            {key: 'cheatdetection', component: 'quizaccess_cheatdetect'}
         ];
 
         Str.get_strings(stringKeys).then(function(stringsArray) {
@@ -587,7 +589,9 @@ function($, Ajax, Notification, Str, Popover) {
                 extensiondetected: stringsArray[12],
                 yes: stringsArray[13],
                 no: stringsArray[14],
-                closepopover: stringsArray[15]
+                closepopover: stringsArray[15],
+                multiplepageswarning: stringsArray[16],
+                cheatdetection: stringsArray[17]
             };
 
             processAttemptSummariesWithStrings(summaries, strings);
@@ -621,6 +625,47 @@ function($, Ajax, Notification, Str, Popover) {
             if (SHOW_CONSOLE_LOG) {
                 // eslint-disable-next-line no-console
                 console.log('CheatDetect: Processing attempt ' + attemptId + ' with ' + slots.length + ' slots');
+            }
+
+            // Check if quiz has multiple questions per page (tracking not reliable in this case)
+            var hasOnlyOneQuestionPerPage = attemptData.summary &&
+                                             attemptData.summary.has_only_one_question_per_page === true;
+
+            // If has_only_one_question_per_page is false, use gray-strike icon and skip slot icons
+            if (hasOnlyOneQuestionPerPage === false) {
+                if (SHOW_CONSOLE_LOG) {
+                    // eslint-disable-next-line no-console
+                    console.log('CheatDetect: Quiz has multiple questions per page, using gray-strike icon for attempt ' +
+                                attemptId);
+                }
+
+                // Only process summary icon with gray-strike color, skip slot icons
+                var $reviewLinkStrike = $row.find('.reviewlink');
+                if ($reviewLinkStrike.length > 0) {
+                    var $oldEyeIconStrike = $reviewLinkStrike.siblings('.cheatdetect-icon');
+                    if ($oldEyeIconStrike.length > 0) {
+                        var $newEyeIconStrike = createSvgIcon('gray-strike', 'summary');
+
+                        // Create button with popover (same style as question icons)
+                        var $iconButtonStrike = $('<button>')
+                            .attr('type', 'button')
+                            .attr('data-bs-toggle', 'popover')
+                            .attr('data-bs-trigger', 'click')
+                            .attr('data-bs-html', 'true')
+                            .attr('data-bs-title', strings.cheatdetection || 'Cheat Detection')
+                            .attr('data-bs-content', strings.multiplepageswarning)
+                            .attr('data-bs-placement', 'left')
+                            .addClass('btn btn-link p-0 cheatdetect-icon-button')
+                            .append($newEyeIconStrike);
+
+                        $oldEyeIconStrike.replaceWith($iconButtonStrike);
+                        if (SHOW_CONSOLE_LOG) {
+                            // eslint-disable-next-line no-console
+                            console.log('CheatDetect: Replaced summary icon with gray-strike for attempt ' + attemptId);
+                        }
+                    }
+                }
+                return; // Skip to next attempt, don't process slot icons
             }
 
             var hasRedSlot = false;
@@ -732,10 +777,10 @@ function($, Ajax, Notification, Str, Popover) {
                 });
             }
 
-            // Process summary icon (in the review link)
+            // Process summary icon (outside the review link, as sibling)
             var $reviewLink = $row.find('.reviewlink');
             if ($reviewLink.length > 0) {
-                var $oldEyeIcon = $reviewLink.find('.cheatdetect-icon');
+                var $oldEyeIcon = $reviewLink.siblings('.cheatdetect-icon');
 
                 if ($oldEyeIcon.length > 0) {
                     // Use gray if no slots, red if any slot is red, green otherwise
@@ -817,8 +862,8 @@ function($, Ajax, Notification, Str, Popover) {
         $('.reviewlink').each(function() {
             var $link = $(this);
 
-            // Check if icon already added
-            if ($link.find('.cheatdetect-icon').length > 0) {
+            // Check if icon already added (now outside the link, as sibling)
+            if ($link.siblings('.cheatdetect-icon').length > 0) {
                 return;
             }
 
@@ -827,8 +872,8 @@ function($, Ajax, Notification, Str, Popover) {
                 .addClass('fa fa-eye cheatdetect-icon')
                 .attr('aria-hidden', 'true');
 
-            // Append icon to the link
-            $link.append(' ').append($icon);
+            // Insert icon after the link (outside, not inside)
+            $link.after($icon);
         });
     };
 

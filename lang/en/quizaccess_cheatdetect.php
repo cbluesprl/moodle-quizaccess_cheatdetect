@@ -20,7 +20,7 @@ $string['eventsdetected'] = '{$a} suspicious event(s) detected';
 $string['layoutwarning'] = 'Warning: In this configuration, the cheat detection plugin cannot function. To use it, please select the "Each question" setting.';
 
 // Review question page - summary block
-$string['questiondetails'] = 'Question details';
+$string['questiondetails'] = 'Cheat Detection - Question details';
 $string['timespent'] = 'The user spent {$a->duration} ({$a->percentage}% of the quiz) on question {$a->slot}';
 $string['day'] = 'day';
 $string['days'] = 'days';
@@ -36,3 +36,4 @@ $string['extensiondetected'] = 'Cheat extension detection: {$a}';
 $string['yes'] = 'Yes';
 $string['no'] = 'No';
 $string['closepopover'] = 'Close';
+$string['multiplepageswarning'] = 'Cheat detection unavailable: quiz must display one question per page.';

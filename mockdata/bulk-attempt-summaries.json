@@ -9,7 +9,7 @@
         "total_copies": 1,
         "total_focus_losses": 5,
         "total_extensions": 0,
-        "has_only_one_question_per_page": true,
+        "has_only_one_question_per_page": false,
         "cheat_detected": true,
         "avg_time": 14,
         "has_extensions": false
