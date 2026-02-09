@@ -18,7 +18,7 @@ function($, Ajax, Notification, Str, Popover) {
     const USE_MOCK_DATA = false;
 
     // Toggle console logging for debugging
-    const SHOW_CONSOLE_LOG = false;
+    const SHOW_CONSOLE_LOG = true;
 
     if (USE_MOCK_DATA) {
         console.warn('🚨 USE_MOCK_DATA set on TRUE. That means it will use fake data. 🚨');
@@ -129,55 +129,30 @@ function($, Ajax, Notification, Str, Popover) {
             return;
         }
 
-        // Determine URL and method based on USE_MOCK_DATA flag
-        var url = USE_MOCK_DATA ?
-            M.cfg.wwwroot + '/mod/quiz/accessrule/cheatdetect/mockdata/bulk-attempt-summaries.json' :
-            '/local/rest/api/quizaccess_cheatdetect/bulk-attempt-summaries';
-
-        var method = USE_MOCK_DATA ? 'GET' : 'POST';
-        var payload = USE_MOCK_DATA ? null : {attemptids: attemptIds};
-
-        if (SHOW_CONSOLE_LOG) {
-            if (USE_MOCK_DATA) {
+        Ajax.call([{
+            methodname: 'quizaccess_cheatdetect_get_bulk_attempt_summaries',
+            args: {
+                attemptids: attemptIds
+            }
+        }])[0].then(function(response) {
+            if (SHOW_CONSOLE_LOG) {
                 // eslint-disable-next-line no-console
-                console.log('CheatDetect: Using MOCK DATA from file for attempt IDs:', attemptIds);
-            } else {
-                console.log('CheatDetect: Fetching bulk attempt summaries for IDs:', attemptIds); // eslint-disable-line no-console
+                console.log('CheatDetect: Bulk attempt summaries response:', response);
             }
-        }
 
-        var ajaxConfig = {
-            url: url,
-            method: method,
-            dataType: 'json',
-            success: function(response) {
-                if (SHOW_CONSOLE_LOG) {
-                    // eslint-disable-next-line no-console
-                    console.log('CheatDetect: Bulk attempt summaries response:', response);
-                }
-                if (response.success && response.data) {
-                    processBulkAttemptSummaries(response.data);
-                } else {
-                    if (SHOW_CONSOLE_LOG) {
-                        // eslint-disable-next-line no-console
-                        console.warn('CheatDetect: Invalid response from bulk summaries webservice', response);
-                    }
-                }
-            },
-            error: function(xhr, status, error) {
-                if (SHOW_CONSOLE_LOG) {
-                    console.error('CheatDetect: Error fetching bulk attempt summaries', error); // eslint-disable-line no-console
-                }
+            if (Array.isArray(response)) {
+                processBulkAttemptSummaries(response);
+            } else if (SHOW_CONSOLE_LOG) {
+                console.warn('CheatDetect: Invalid WS response structure', response);
             }
-        };
+        }).catch(function(error) {
+            if (SHOW_CONSOLE_LOG) {
+                // eslint-disable-next-line no-console
+                console.error('CheatDetect: AJAX error fetching bulk attempt summaries', error);
+            }
+            Notification.exception(error);
+        });
 
-        // Add POST-specific parameters only for real webservice calls
-        if (!USE_MOCK_DATA) {
-            ajaxConfig.contentType = 'application/json';
-            ajaxConfig.data = JSON.stringify(payload);
-        }
-
-        $.ajax(ajaxConfig);
     };
 
     /**
@@ -940,27 +915,27 @@ function($, Ajax, Notification, Str, Popover) {
      * @param {jQuery} $questionElement The question element to inject the summary into
      */
     var fetchAttemptSummary = function(attemptId, slotId, $questionElement) {
-        var url = '/local/rest/api/quizaccess_cheatdetect/attempt-summary/' + attemptId + '/slots/' + slotId;
-
-        $.ajax({
-            url: url,
-            method: 'GET',
-            dataType: 'json',
-            success: function(response) {
-                if (response.success && response.data) {
-                    createCheatDetectResumeBlock(response.data, $questionElement, slotId);
-                } else {
-                    if (SHOW_CONSOLE_LOG) {
-                        console.warn('CheatDetect: Invalid response from webservice', response); // eslint-disable-line no-console
-                    }
-                }
-            },
-            error: function(xhr, status, error) {
-                if (SHOW_CONSOLE_LOG) {
-                    console.error('CheatDetect: Error fetching attempt summary', error); // eslint-disable-line no-console
-                }
+        Ajax.call([{
+            methodname: 'quizaccess_cheatdetect_get_slot_summary',
+            args: {
+                attemptid: attemptId,
+                slot: slotId
             }
+        }])[0].then(function(response) {
+            if (response) {
+                createCheatDetectResumeBlock(response, $questionElement, slotId);
+            } else if (SHOW_CONSOLE_LOG) {
+                // eslint-disable-next-line no-console
+                console.warn('CheatDetect: Empty slot summary response');
+            }
+        }).catch(function(error) {
+            if (SHOW_CONSOLE_LOG) {
+                // eslint-disable-next-line no-console
+                console.error('CheatDetect: AJAX error fetching slot summary', error);
+            }
+            Notification.exception(error);
         });
+
     };
 
     /**

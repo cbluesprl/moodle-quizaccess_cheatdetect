@@ -7,9 +7,10 @@
  */
 
 define([
+    'core/ajax',
     'quizaccess_cheatdetect/extension-detector/index',
     'quizaccess_cheatdetect/shared/utils'
-], function(ExtensionDetector, SharedUtils) {
+], function(Ajax, ExtensionDetector, SharedUtils) {
     'use strict';
 
     const DEBUG_SHOW_CONSOLE_LOG = true;
@@ -92,7 +93,11 @@ define([
                         const _data = JSON.stringify({extensionKey: key, detectedElementUid: detectedElement.uid});
                         if (!extensionDetectedDataAlreadySent.has(_data)) {
                             extensionDetectedDataAlreadySent.add(_data);
-                            newData.push(detectedElement);
+                            newData.push({
+                                extensionKey: key,
+                                uid: detectedElement.uid ?? null,
+                                name: detectedElement.name ?? null
+                            });
                         }
                     }
                 }
@@ -193,8 +198,13 @@ define([
                     const objectStore = transaction.objectStore("events");
 
                     const _newEvent = {
-                        timestamp: SharedUtils.generateTimestamp(),
-                        ...newEvent
+                        timestamp: {
+                            unix: SharedUtils.generateTimestamp().unix
+                        },
+                        action: newEvent.action,
+                        data: newEvent.data !== undefined && newEvent.data !== null
+                            ? JSON.stringify(newEvent.data)
+                            : null
                     };
 
                     if (DEBUG_SHOW_CONSOLE_LOG) {
@@ -234,7 +244,7 @@ define([
                         isCurrentlyFocused = true;
 
                         const focusEvent = {
-                            action: "page_foreground",
+                            action: "focus_gain",
                             data: {
                                 previousState: "background"
                             }
@@ -246,7 +256,7 @@ define([
                         isCurrentlyFocused = false;
 
                         const blurEvent = {
-                            action: "page_background",
+                            action: "focus_loss",
                             data: {
                                 previousState: "foreground"
                             }
@@ -391,7 +401,7 @@ define([
              */
             function filterSpuriousEvents(events) {
                 return events.filter((event, index, arr) => {
-                    if (event.action === "page_background" && index < arr.length - 1) {
+                    if (event.action === "focus_loss" && index < arr.length - 1) {
                         const nextAction = arr[index + 1].action;
                         // Remove page_background if immediately followed by page_unload or page_load
                         // (page_load means it's an orphan from previous navigation)
@@ -417,7 +427,20 @@ define([
                     const request = objectStore.getAll();
 
                     request.onsuccess = () => {
-                        const events = filterSpuriousEvents(request.result);
+                        const events = filterSpuriousEvents(request.result).map(event => {
+                            return {
+                                action: event.action,
+                                timestamp: {
+                                    unix: event.timestamp?.unix ?? event.timestamp
+                                },
+                                data: event.data !== undefined && event.data !== null
+                                    ? (typeof event.data === 'string'
+                                        ? event.data
+                                        : JSON.stringify(event.data))
+                                    : null
+                            };
+                        });
+
                         if (events.length > 0) {
                             const data = {
                                 session_id: backendParams.sessionId,
@@ -427,27 +450,33 @@ define([
                                 slot: backendParams.slot,
                                 events: events
                             };
-
-                            fetch('/local/rest/api/quizaccess_cheatdetect/save-data', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify(data)
-                            }).then(response => {
-                                if (response.ok) {
+                            Ajax.call([{
+                                methodname: 'quizaccess_cheatdetect_save_data',
+                                args: {
+                                    session_id: backendParams.sessionId,
+                                    attemptid: backendParams.attemptid,
+                                    userid: backendParams.userid,
+                                    quizid: backendParams.quizid,
+                                    slot: backendParams.slot ?? null,
+                                    events: events
+                                }
+                            }])[0].then((response) => {
+                                if (response && response.success) {
                                     if (DEBUG_SHOW_CONSOLE_LOG) {
                                         // eslint-disable-next-line no-console
-                                        console.log('User action(s) sent to server', JSON.stringify(data, null, 2));
+                                        console.log(
+                                            'User action(s) sent to server',
+                                            JSON.stringify(response, null, 2)
+                                        );
                                     }
                                     clearStoredEvents();
                                 } else {
                                     // eslint-disable-next-line no-console
-                                    console.error('Error sending events');
+                                    console.error('Server error saving events', response?.error);
                                 }
-                            }).catch(error => {
+                            }).catch((error) => {
                                 // eslint-disable-next-line no-console
-                                console.error('Network error:', error);
+                                console.error('AJAX error saving events', error);
                             });
                         } else {
                             if (DEBUG_SHOW_CONSOLE_LOG) {
