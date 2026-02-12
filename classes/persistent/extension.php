@@ -16,10 +16,11 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Class representing an extension record.
- *
- * @copyright  2025 CBlue SRL <support@cblue.be>
+ * @package    mod_quizaccess_cheatdetect
+ * @copyright  2026 CBlue SRL
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author     gnormand@cblue.be, abrichard@cblue.be
+ * @since      1.0.0
  */
 
 namespace quizaccess_cheatdetect\persistent;
@@ -27,11 +28,28 @@ namespace quizaccess_cheatdetect\persistent;
 defined('MOODLE_INTERNAL') || exit();
 
 use core\persistent;
-
+/**
+ * Class representing a cheat detection extension record for a quiz attempt.
+ *
+ * This class extends the core persistent class and defines the properties
+ * that are stored in the 'quizaccess_cheatdetect_extensions' table.
+ *
+ * @package    mod_quizaccess_cheatdetect
+ * @copyright  2026 CBlue SRL
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class extension extends persistent
 {
     const TABLE = 'quizaccess_cheatdetect_extensions';
-
+    /**
+     * Defines the properties of a cheat detection extension.
+     *
+     * Each property corresponds to a column in the 'quizaccess_cheatdetect_extensions'
+     * database table and specifies its type, default value, and nullability.
+     *
+     * @return array<string, array<string, mixed>> An associative array defining
+     *                                           the extension properties.
+     */
     protected static function define_properties(): array
     {
         return [

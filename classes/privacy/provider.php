@@ -1,4 +1,28 @@
 <?php
+
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+/**
+ * @package    mod_quizaccess_cheatdetect
+ * @copyright  2026 CBlue SRL
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author     gnormand@cblue.be, abrichard@cblue.be
+ * @since      1.0.0
+ */
+
 namespace quizaccess_cheatdetect\privacy;
 
 defined('MOODLE_INTERNAL') || die();
@@ -10,16 +34,29 @@ use core_privacy\local\request\userlist;
 use core_privacy\local\request\writer;
 
 /**
- * Privacy API implementation for quizaccess_cheatdetect.
+ * Privacy provider implementation for the quizaccess_cheatdetect plugin.
+ *
+ * This class integrates with Moodle's Privacy API and defines:
+ * - The metadata describing stored user data
+ * - The contexts containing user data
+ * - The export of user data
+ * - The deletion of user data (single user, multiple users, or all users)
+ *
+ * @package    mod_quizaccess_cheatdetect
+ * @copyright  2026 CBlue SRL
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class provider implements
     \core_privacy\local\metadata\provider,
     \core_privacy\local\request\plugin\provider,
     \core_privacy\local\request\core_userlist_provider {
 
-    // -------------------------------
-    // Declare metadata
-    // -------------------------------
+    /**
+     * Returns metadata about the user data stored by this plugin.
+     *
+     * @param collection $collection The initialised collection to add metadata to.
+     * @return collection The updated collection with plugin metadata added.
+     */
     public static function get_metadata(collection $collection): collection {
         $collection->add_database_table(
             'quizaccess_cheatdetect_events',
@@ -54,9 +91,12 @@ class provider implements
         return $collection;
     }
 
-    // -------------------------------------------------
-    //  Context for an user
-    // -------------------------------------------------
+    /**
+     * Returns the list of contexts containing user data for the specified user.
+     *
+     * @param int $userid The user ID.
+     * @return contextlist The list of contexts containing data for the user.
+     */
     public static function get_contexts_for_userid(int $userid): contextlist {
         global $DB;
 
@@ -78,9 +118,12 @@ class provider implements
         return $contextlist;
     }
 
-    // -------------------------------
-    // Export user's data
-    // -------------------------------
+    /**
+     * Exports all user data for the specified approved contexts.
+     *
+     * @param approved_contextlist $contextlist The approved contexts to export data from.
+     * @return void
+     */
     public static function export_user_data(approved_contextlist $contextlist) {
         global $DB;
 
@@ -136,9 +179,12 @@ class provider implements
         }
     }
 
-    // -------------------------------
-    // Deleting data for all users in context
-    // -------------------------------
+    /**
+     * Deletes all user data for all users within the specified context.
+     *
+     * @param \context $context The context to delete data from.
+     * @return void
+     */
     public static function delete_data_for_all_users_in_context(\context $context) {
         global $DB;
 
@@ -169,9 +215,13 @@ class provider implements
         );
     }
 
-    // -------------------------------
-    // Deleting data for an users in context
-    // -------------------------------
+    /**
+     * Deletes all user data for a specific user within the specified context.
+     *
+     * @param \context $context The context to delete data from.
+     * @param int $userid The user ID whose data should be deleted.
+     * @return void
+     */
     public static function delete_data_for_user(\context $context, $userid) {
         global $DB;
 
@@ -205,9 +255,12 @@ class provider implements
         );
     }
 
-    // -------------------------------
-    //  Users list
-    // -------------------------------
+    /**
+     * Adds to the userlist all users who have data stored in the specified context.
+     *
+     * @param userlist $userlist The userlist object to populate.
+     * @return void
+     */
     public static function get_users_in_context(userlist $userlist) {
         global $DB;
         $context = $userlist->get_context();
@@ -225,9 +278,13 @@ class provider implements
         }
     }
 
-    // -------------------------------
-    // Deleting data for an users in context
-    // -------------------------------
+    /**
+     * Deletes user data for multiple users within the specified context.
+     *
+     * @param \context $context The context to delete data from.
+     * @param int[] $userids The list of user IDs whose data should be deleted.
+     * @return void
+     */
     public static function delete_data_for_users(\context $context, array $userids) {
         global $DB;
 

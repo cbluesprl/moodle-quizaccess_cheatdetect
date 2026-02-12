@@ -1,4 +1,26 @@
 <?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+/**
+ * @package    mod_quizaccess_cheatdetect
+ * @copyright  2026 CBlue SRL
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author     abrichard@cblue.be
+ * @since      1.0.0
+ */
 namespace quizaccess_cheatdetect\external;
 
 defined('MOODLE_INTERNAL') || die();
@@ -15,12 +37,25 @@ use context_course;
 
 class get_bulk_attempt_summaries extends external_api {
 
+    /**
+     * ${execute_parameters}
+     *
+     *
+     * @return ${external_function_parameters}
+     */
     public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters([
             'attemptids' => new external_multiple_structure(new external_value(PARAM_INT, 'Attempt ID'))
         ]);
     }
 
+    /**
+     * ${execute}
+     *
+     * @param ${array} ${$attemptids}
+     *
+     * @return ${array}
+     */
     public static function execute(array $attemptids): array {
         global $DB;
         self::validate_parameters(self::execute_parameters(), ['attemptids' => $attemptids]);
@@ -58,7 +93,7 @@ class get_bulk_attempt_summaries extends external_api {
                     'time_percentage' => $time_percentage,
                     'copy_count' => $metric->get('copy_count'),
                     'focus_loss_count' => $metric->get('focus_loss_count'),
-                    'extensions_detected' => $extensions, // <-- converti en string
+                    'extensions_detected' => $extensions,
                     'has_extension' => !empty($extensions),
                     'cheat_detected' => $cheat_detected
                 ];
@@ -75,6 +110,13 @@ class get_bulk_attempt_summaries extends external_api {
         return $results;
     }
 
+
+    /**
+     * ${execute_returns}
+     *
+     *
+     * @return ${external_multiple_structure}
+     */
     public static function execute_returns(): external_multiple_structure {
         return new external_multiple_structure(
             new external_single_structure([

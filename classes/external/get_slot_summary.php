@@ -1,4 +1,26 @@
 <?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+/**
+ * @package    mod_quizaccess_cheatdetect
+ * @copyright  2026 CBlue SRL
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author     abrichard@cblue.be
+ * @since      1.0.0
+ */
 namespace quizaccess_cheatdetect\external;
 
 defined('MOODLE_INTERNAL') || die();
@@ -12,8 +34,15 @@ use external_value;
 use quizaccess_cheatdetect\helper;
 use context_course;
 
+/**
+ * ${get_slot_summary}
+ */
 class get_slot_summary extends external_api {
-
+    /**
+     * ${execute_parameters}
+     *
+     * @return ${external_function_parameters}
+     */
     public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters([
             'attemptid' => new external_value(PARAM_INT, 'Quiz attempt id'),
@@ -21,6 +50,14 @@ class get_slot_summary extends external_api {
         ]);
     }
 
+    /**
+     * ${execute}
+     *
+     * @param ${int} ${$attemptid}
+     * @param ${int} ${$slot}
+     *
+     * @return ${array}
+     */
     public static function execute(int $attemptid, int $slot): array {
         global $DB;
 
@@ -68,6 +105,11 @@ class get_slot_summary extends external_api {
         ];
     }
 
+    /**
+     * ${execute_returns}
+     *
+     * @return ${external_single_structure}
+     */
     public static function execute_returns(): external_single_structure {
         return new external_single_structure([
             'attemptid' => new external_value(PARAM_INT, 'Quiz attempt id'),
@@ -77,7 +119,6 @@ class get_slot_summary extends external_api {
             'copy_count' => new external_value(PARAM_INT, 'Number of copy events'),
             'focus_loss_count' => new external_value(PARAM_INT, 'Number of focus loss events'),
 
-            // ✅ STRUCTURE, PAS PARAM_RAW
             'extensions_detected' => new external_multiple_structure(
                 new external_single_structure([
                     'extension_key' => new external_value(PARAM_TEXT, 'Extension key'),

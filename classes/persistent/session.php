@@ -16,6 +16,14 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * @package    mod_quizaccess_cheatdetect
+ * @copyright  2026 CBlue SRL
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author     gnormand@cblue.be, abrichard@cblue.be
+ * @since      1.0.0
+ */
+
+/**
  * Class representing a session record.
  *
  * @copyright  2025 CBlue SRL <support@cblue.be>
@@ -27,11 +35,30 @@ namespace quizaccess_cheatdetect\persistent;
 defined('MOODLE_INTERNAL') || exit();
 
 use core\persistent;
-
+/**
+ * Class representing a cheat detection session record for a quiz attempt.
+ *
+ * This class extends the core persistent class and defines the properties
+ * that are stored in the 'quizaccess_cheatdetect_sess' table.
+ * A session represents a tracked activity period linked to a specific
+ * quiz attempt and user.
+ *
+ * @package    mod_quizaccess_cheatdetect
+ * @copyright  2026 CBlue SRL
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class session extends persistent
 {
     const TABLE = 'quizaccess_cheatdetect_sess';
-
+    /**
+     * Defines the properties of a cheat detection session.
+     *
+     * Each property corresponds to a column in the 'quizaccess_cheatdetect_sess'
+     * database table and specifies its type, default value, and nullability.
+     *
+     * @return array<string, array<string, mixed>> An associative array defining
+     *                                           the session properties.
+     */
     protected static function define_properties(): array
     {
         return [

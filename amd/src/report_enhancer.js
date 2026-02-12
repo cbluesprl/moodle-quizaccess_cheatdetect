@@ -14,15 +14,8 @@
 define(['jquery', 'core/ajax', 'core/notification', 'core/str', 'theme_boost/bootstrap/popover'],
 function($, Ajax, Notification, Str, Popover) {
 
-    // Toggle between mock data and real webservice calls
-    const USE_MOCK_DATA = false;
-
     // Toggle console logging for debugging
-    const SHOW_CONSOLE_LOG = true;
-
-    if (USE_MOCK_DATA) {
-        console.warn('🚨 USE_MOCK_DATA set on TRUE. That means it will use fake data. 🚨');
-    }
+    const SHOW_CONSOLE_LOG = false;
 
     /**
      * Initialize the report enhancer
@@ -142,13 +135,11 @@ function($, Ajax, Notification, Str, Popover) {
 
             if (Array.isArray(response)) {
                 processBulkAttemptSummaries(response);
-            } else if (SHOW_CONSOLE_LOG) {
-                console.warn('CheatDetect: Invalid WS response structure', response);
             }
         }).catch(function(error) {
             if (SHOW_CONSOLE_LOG) {
                 // eslint-disable-next-line no-console
-                console.error('CheatDetect: AJAX error fetching bulk attempt summaries', error);
+                console.log('CheatDetect: AJAX error fetching bulk attempt summaries', error);
             }
             Notification.exception(error);
         });

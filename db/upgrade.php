@@ -15,21 +15,37 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Upgrade script for quizaccess_cheatdetect.
- *
- * @package     quizaccess_cheatdetect
- * @copyright   2025 CBlue SPRL
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @author      gnormand@cblue.be
+ * @package    mod_quizaccess_cheatdetect
+ * @copyright  2026 CBlue SRL
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author     gnormand@cblue.be, abrichard@cblue.be
+ * @since      1.0.0
  */
 
+/**
+ * Upgrade script for the quizaccess_cheatdetect plugin.
+ *
+ * Handles database schema changes and plugin upgrade steps.
+ *
+ * @package    mod_quizaccess_cheatdetect
+ * @category   upgrade
+ * @copyright  2026 CBlue SRL
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author     gnormand@cblue.be
+ * @author     abrichard@cblue.be
+ * @since      1.0.0
+ */
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Upgrade the plugin.
+ * Upgrade the quizaccess_cheatdetect plugin.
  *
- * @param int $oldversion The old version of the plugin
- * @return bool
+ * Executes incremental upgrade steps depending on the installed version.
+ * Handles creation of new tables, addition of fields, indexes, and keys,
+ * as well as cleanup of old tables.
+ *
+ * @param int $oldversion The currently installed version of the plugin.
+ * @return bool True on success.
  */
 function xmldb_quizaccess_cheatdetect_upgrade($oldversion) {
     global $DB;

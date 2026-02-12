@@ -1,28 +1,24 @@
 <?php
-
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
-// Moodle is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Helper class for cheat detection queries.
+ * Cheat detection helper utilities.
  *
- * @package    quizaccess_cheatdetect
- * @copyright  2025 CBlue SRL <support@cblue.be>
+ * Provides high-level query methods to retrieve and aggregate
+ * cheat detection metrics and extension data for quiz attempts.
+ *
+ * @package    mod_quizaccess_cheatdetect
+ * @copyright  2026 CBlue SRL
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author     gnormand@cblue.be
+ * @author     abrichard@cblue.be
+ * @since      1.0.0
  */
-
 namespace quizaccess_cheatdetect;
 
 use quizaccess_cheatdetect\persistent\metric;
@@ -32,15 +28,23 @@ defined('MOODLE_INTERNAL') || die();
 
 /**
  * Helper class for querying cheat detection data.
+ *
+ * This class centralises database queries related to:
+ * - Slot metrics
+ * - Extension detection
+ * - Attempt-level statistics
+ *
+ * All methods are static and designed for read-only operations.
  */
 class helper {
 
     /**
-     * Get metric data for a specific attempt and slot.
+     * Retrieve metric data for a specific attempt and slot.
      *
-     * @param int $attemptid The attempt ID
-     * @param int $slot The question slot number
-     * @return metric|null The metric object or null if not found
+     * @param int $attemptid Quiz attempt ID.
+     * @param int $slot Question slot number.
+     *
+     * @return metric|null Metric persistent object or null if not found.
      */
     public static function get_slot_metric(int $attemptid, int $slot): ?metric {
         global $DB;
@@ -66,10 +70,11 @@ class helper {
     }
 
     /**
-     * Get total time spent on all slots for an attempt.
+     * Get total time spent across all slots for a given attempt.
      *
-     * @param int $attemptid The attempt ID
-     * @return int Total time in seconds
+     * @param int $attemptid Quiz attempt ID.
+     *
+     * @return int Total time in seconds.
      */
     public static function get_total_attempt_time(int $attemptid): int {
         global $DB;
@@ -85,11 +90,18 @@ class helper {
     }
 
     /**
-     * Check if any extension was detected for a specific attempt and slot.
+     * Retrieve detected browser extensions for a specific attempt and slot.
      *
-     * @param int $attemptid The attempt ID
-     * @param int $slot The question slot number
-     * @return array Array of detected extensions with details
+     * @param int $attemptid Quiz attempt ID.
+     * @param int $slot Question slot number.
+     *
+     * @return array<int, array{
+     *     key: string,
+     *     name: string,
+     *     uid: string,
+     *     detected_at: int
+     * }>
+     *     List of detected extensions with metadata.
      */
     public static function get_slot_extensions(int $attemptid, int $slot): array {
         global $DB;
@@ -113,10 +125,13 @@ class helper {
     }
 
     /**
-     * Get all metrics for an attempt.
+     * Retrieve all metric objects for a given attempt.
      *
-     * @param int $attemptid The attempt ID
-     * @return array Array of metric objects indexed by slot
+     * Returned array is indexed by slot number.
+     *
+     * @param int $attemptid Quiz attempt ID.
+     *
+     * @return array<int, metric> Array of metric persistents indexed by slot.
      */
     public static function get_attempt_metrics(int $attemptid): array {
         global $DB;
@@ -136,10 +151,11 @@ class helper {
     }
 
     /**
-     * Check if any extension was detected for an attempt (any slot).
+     * Determine whether any extension was detected for an attempt.
      *
-     * @param int $attemptid The attempt ID
-     * @return bool True if at least one extension was detected
+     * @param int $attemptid Quiz attempt ID.
+     *
+     * @return bool True if at least one extension record exists.
      */
     public static function has_extensions(int $attemptid): bool {
         global $DB;
@@ -148,10 +164,23 @@ class helper {
     }
 
     /**
-     * Get summary statistics for an attempt.
+     * Compute summary statistics for a quiz attempt.
      *
-     * @param int $attemptid The attempt ID
-     * @return array Summary with total_time, slot_count, avg_time, etc.
+     * Includes aggregated counts and derived indicators.
+     *
+     * @param int $attemptid Quiz attempt ID.
+     *
+     * @return array{
+     *     slot_count: int,
+     *     total_time: int,
+     *     total_copies: int,
+     *     total_focus_losses: int,
+     *     total_extensions: int,
+     *     has_only_one_question_per_page: bool,
+     *     cheat_detected: bool,
+     *     avg_time: int
+     * }
+     *     Structured summary of attempt metrics.
      */
     public static function get_attempt_summary(int $attemptid): array {
         global $DB;

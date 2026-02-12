@@ -5,7 +5,22 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * @package    mod_quizaccess_cheatdetect
+ * @copyright  2026 CBlue SRL
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author     abrichard@cblue.be
+ * @since      1.0.0
+ */
 namespace quizaccess_cheatdetect\external;
 
 defined('MOODLE_INTERNAL') || die();
@@ -55,7 +70,16 @@ class save_data extends external_api {
     }
 
     /**
-     * Execute the external function.
+     * ${Execute the external function.}
+     *
+     * @param ${string} ${$session_id}
+     * @param ${int} ${$attemptid}
+     * @param ${int} ${$userid}
+     * @param ${int} ${$quizid}
+     * @param ${int} ${$slot}
+     * @param ${array} ${$events}
+     *
+     * @return ${array}
      */
     public static function execute(
         string $session_id,
@@ -95,7 +119,6 @@ class save_data extends external_api {
 
             $transaction->allow_commit();
 
-            // Ne jamais renvoyer les événements bruts à Moodle
             return [
                 'success' => true,
                 'processed' => count($events),
@@ -114,7 +137,9 @@ class save_data extends external_api {
     }
 
     /**
-     * Define return structure.
+     * ${Define return structure.}
+     *
+     * @return ${external_single_structure}
      */
     public static function execute_returns(): external_single_structure {
         return new external_single_structure([
@@ -127,25 +152,43 @@ class save_data extends external_api {
     /* =======================
      * === Internal logic ===
      * ======================= */
-
+    /**
+     * ${process_event}
+     *
+     * @param ${stdClass} ${$eventdata}
+     * @param ${array} ${$context}
+     *
+     */
     private static function process_event(\stdClass $eventdata, array $context): void {
         if (empty($eventdata->action) || empty($eventdata->timestamp['unix'])) {
             return;
         }
 
-        // Délégation à event_handler
         event_handler::process_event((object)$eventdata, $context);
 
-        // Gestion spécifique des extensions détectées
         if ($eventdata->action === 'extensions_detected') {
             self::save_extensions($eventdata, $context);
         }
     }
 
+    /**
+     * ${convert_timestamp_to_seconds}
+     *
+     * @param ${int} ${$timestamp}
+     *
+     * @return ${int}
+     */
     private static function convert_timestamp_to_seconds(int $timestamp): int {
         return (int) ($timestamp / self::TIMESTAMP_CONVERSION_FACTOR);
     }
 
+    /**
+     * ${save_extensions}
+     *
+     * @param ${stdClass} ${$eventdata}
+     * @param ${array} ${$context}
+     *
+     */
     private static function save_extensions(\stdClass $eventdata, array $context): void {
         if (empty($eventdata->data)) {
             return;

@@ -1,16 +1,43 @@
 <?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+
 /**
- * @package     quizaccess_cheatdetect
- * @copyright   2025 CBlue SPRL
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @author      gnormand@cblue.be
+ * Injects JavaScript on quiz report pages for cheat detection.
+ *
+ * This callback is executed before the page footer is rendered.
+ * It ensures that the script is only added on relevant quiz report pages
+ * and that the user has the required capability to view cheat detection reports.
+ *
+ * @package    mod_quizaccess_cheatdetect
+ * @category   output
+ * @copyright  2026 CBlue SRL
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author     gnormand@cblue.be
+ * @author     abrichard@cblue.be
+ * @since      1.0.0
  */
 
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Callback to inject JavaScript into report pages
- * This is called before the page output
+ * Callback to inject JavaScript into quiz report pages.
+ *
+ * Checks the page type, context, course module, and user capabilities
+ * before adding the AMD JavaScript module to enhance reports.
  */
 function quizaccess_cheatdetect_before_footer() {
     global $PAGE, $DB;

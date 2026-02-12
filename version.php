@@ -15,6 +15,13 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * @package    mod_quizaccess_cheatdetect
+ * @copyright  2026 CBlue SRL
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author     gnormand@cblue.be, abrichard@cblue.be
+ * @since      1.0.0
+ */
+/**
  * @package     quizaccess_cheatdetect
  * @copyright   2025 CBlue SPRL
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later

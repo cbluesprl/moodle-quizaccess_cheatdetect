@@ -16,22 +16,45 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Class representing a metric record.
- *
- * @copyright  2025 CBlue SRL <support@cblue.be>
+ * @package    mod_quizaccess_cheatdetect
+ * @copyright  2026 CBlue SRL
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author     gnormand@cblue.be, abrichard@cblue.be
+ * @since      1.0.0
  */
 
+/**
+ * Class representing a metric record.
+ */
 namespace quizaccess_cheatdetect\persistent;
 
 defined('MOODLE_INTERNAL') || exit();
 
 use core\persistent;
-
+/**
+ * Class representing a cheat detection metric record for a quiz attempt.
+ *
+ * This class extends the core persistent class and defines the properties
+ * that are stored in the 'quizaccess_cheatdetect_metrics' table.
+ * Each metric record tracks timing, focus, copy actions, extension usage,
+ * and the current state for a specific quiz attempt and user.
+ *
+ * @package    mod_quizaccess_cheatdetect
+ * @copyright  2026 CBlue SRL
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class metric extends persistent
 {
     const TABLE = 'quizaccess_cheatdetect_metrics';
-
+    /**
+     * Defines the properties of a cheat detection metric.
+     *
+     * Each property corresponds to a column in the 'quizaccess_cheatdetect_metrics'
+     * database table and specifies its type, default value, and nullability.
+     *
+     * @return array<string, array<string, mixed>> An associative array defining
+     *                                           the metric properties.
+     */
     protected static function define_properties(): array
     {
         return [

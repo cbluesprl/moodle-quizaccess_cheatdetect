@@ -13,7 +13,7 @@ define([
 ], function(Ajax, ExtensionDetector, SharedUtils) {
     'use strict';
 
-    const DEBUG_SHOW_CONSOLE_LOG = true;
+    const DEBUG_SHOW_CONSOLE_LOG = false;
 
     /**
      * @typedef {Object} BackendParams
@@ -442,14 +442,6 @@ define([
                         });
 
                         if (events.length > 0) {
-                            const data = {
-                                session_id: backendParams.sessionId,
-                                attemptid: backendParams.attemptid,
-                                userid: backendParams.userid,
-                                quizid: backendParams.quizid,
-                                slot: backendParams.slot,
-                                events: events
-                            };
                             Ajax.call([{
                                 methodname: 'quizaccess_cheatdetect_save_data',
                                 args: {
