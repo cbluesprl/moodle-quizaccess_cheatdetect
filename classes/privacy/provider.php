@@ -111,7 +111,8 @@ class provider implements
         $quizzes = $DB->get_records_sql($sql, ['userid' => $userid]);
 
         foreach ($quizzes as $quiz) {
-            $context = \context_module::instance($quiz->id);
+            $cm = get_coursemodule_from_instance('quiz', $quiz->id);
+            $context = \context_module::instance($cm->id);
             $contextlist->add_context($context);
         }
 
