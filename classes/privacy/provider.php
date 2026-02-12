@@ -190,29 +190,11 @@ class provider implements
 
         $quizid = $context->instanceid;
 
-        $DB->delete_records_sql("
-            DELETE cde
-              FROM {quizaccess_cheatdetect_events} cde
-              JOIN {quiz_attempts} qa ON qa.id = cde.attemptid
-             WHERE qa.quiz = :quizid",
-            ['quizid' => $quizid]
-        );
+        $subquery = "attemptid IN (SELECT id FROM {quiz_attempts} WHERE quiz = :quizid)";
 
-        $DB->delete_records_sql("
-            DELETE cdm
-              FROM {quizaccess_cheatdetect_metrics} cdm
-              JOIN {quiz_attempts} qa ON qa.id = cdm.attemptid
-             WHERE qa.quiz = :quizid",
-            ['quizid' => $quizid]
-        );
-
-        $DB->delete_records_sql("
-            DELETE cdext
-              FROM {quizaccess_cheatdetect_extensions} cdext
-              JOIN {quiz_attempts} qa ON qa.id = cdext.attemptid
-             WHERE qa.quiz = :quizid",
-            ['quizid' => $quizid]
-        );
+        $DB->delete_records_select('quizaccess_cheatdetect_events', $subquery, ['quizid' => $quizid]);
+        $DB->delete_records_select('quizaccess_cheatdetect_metrics', $subquery, ['quizid' => $quizid]);
+        $DB->delete_records_select('quizaccess_cheatdetect_extensions', $subquery, ['quizid' => $quizid]);
     }
 
     /**
@@ -227,32 +209,12 @@ class provider implements
 
         $quizid = $context->instanceid;
 
-        $DB->delete_records_sql("
-            DELETE cde
-              FROM {quizaccess_cheatdetect_events} cde
-              JOIN {quiz_attempts} qa ON qa.id = cde.attemptid
-             WHERE qa.quiz = :quizid
-               AND cde.userid = :userid",
-            ['quizid' => $quizid, 'userid' => $userid]
-        );
+        $subquery = "attemptid IN (SELECT id FROM {quiz_attempts} WHERE quiz = :quizid) AND userid = :userid";
+        $params = ['quizid' => $quizid, 'userid' => $userid];
 
-        $DB->delete_records_sql("
-            DELETE cdm
-              FROM {quizaccess_cheatdetect_metrics} cdm
-              JOIN {quiz_attempts} qa ON qa.id = cdm.attemptid
-             WHERE qa.quiz = :quizid
-               AND cdm.userid = :userid",
-            ['quizid' => $quizid, 'userid' => $userid]
-        );
-
-        $DB->delete_records_sql("
-            DELETE cdext
-              FROM {quizaccess_cheatdetect_extensions} cdext
-              JOIN {quiz_attempts} qa ON qa.id = cdext.attemptid
-             WHERE qa.quiz = :quizid
-               AND cdext.userid = :userid",
-            ['quizid' => $quizid, 'userid' => $userid]
-        );
+        $DB->delete_records_select('quizaccess_cheatdetect_events', $subquery, $params);
+        $DB->delete_records_select('quizaccess_cheatdetect_metrics', $subquery, $params);
+        $DB->delete_records_select('quizaccess_cheatdetect_extensions', $subquery, $params);
     }
 
     /**
@@ -295,24 +257,13 @@ class provider implements
         $quizid = $context->instanceid;
 
         list($usql, $params) = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'uid');
+        $params['quizid'] = $quizid;
 
-        // Supprimer events
-        $DB->delete_records_select("
-        {quizaccess_cheatdetect_events} cde
-        JOIN {quiz_attempts} qa ON qa.id = cde.attemptid
-    ", "qa.quiz = :quizid AND cde.userid $usql", array_merge(['quizid' => $quizid], $params));
+        $subquery = "attemptid IN (SELECT id FROM {quiz_attempts} WHERE quiz = :quizid) AND userid $usql";
 
-        // Supprimer metrics
-        $DB->delete_records_select("
-        {quizaccess_cheatdetect_metrics} cdm
-        JOIN {quiz_attempts} qa ON qa.id = cdm.attemptid
-    ", "qa.quiz = :quizid AND cdm.userid $usql", array_merge(['quizid' => $quizid], $params));
-
-        // Supprimer extensions
-        $DB->delete_records_select("
-        {quizaccess_cheatdetect_extensions} cdext
-        JOIN {quiz_attempts} qa ON qa.id = cdext.attemptid
-    ", "qa.quiz = :quizid AND cdext.userid $usql", array_merge(['quizid' => $quizid], $params));
+        $DB->delete_records_select('quizaccess_cheatdetect_events', $subquery, $params);
+        $DB->delete_records_select('quizaccess_cheatdetect_metrics', $subquery, $params);
+        $DB->delete_records_select('quizaccess_cheatdetect_extensions', $subquery, $params);
     }
 
 }
