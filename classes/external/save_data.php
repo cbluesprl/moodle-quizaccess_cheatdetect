@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * @package    mod_quizaccess_cheatdetect
+ * @package    quizaccess_cheatdetect
  * @copyright  2026 CBlue SRL
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @author     abrichard@cblue.be
@@ -103,6 +103,9 @@ class save_data extends external_api {
         $context = \context_system::instance();
         self::validate_context($context);
         require_login();
+
+        // Prevent students from writing arbitrary tracking data
+        require_capability('mod/cheatdetect:savedetectiondata', $context);
 
         $transaction = $DB->start_delegated_transaction();
 

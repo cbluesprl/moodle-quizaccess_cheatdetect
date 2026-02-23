@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * @package    mod_quizaccess_cheatdetect
+ * @package    quizaccess_cheatdetect
  * @copyright  2026 CBlue SRL
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @author     abrichard@cblue.be
@@ -67,6 +67,8 @@ class get_bulk_attempt_summaries extends external_api {
         $first_attempt = $DB->get_record('quiz_attempts', ['id' => $attemptids[0]], 'id, quiz', MUST_EXIST);
         $quiz = $DB->get_record('quiz', ['id' => $first_attempt->quiz], 'id, course', MUST_EXIST);
         $course_context = context_course::instance($quiz->course);
+
+        require_capability('mod/cheatdetect:viewattempts', $course_context);
 
         if (!has_capability('quizaccess/cheatdetect:viewcoursereports', $course_context)) {
             throw new \Exception('Permission denied');

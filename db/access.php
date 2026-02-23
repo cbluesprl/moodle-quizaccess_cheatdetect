@@ -7,7 +7,7 @@
  * Defines all access control permissions used by the plugin,
  * including system-level configuration and course-level reporting access.
  *
- * @package    mod_quizaccess_cheatdetect
+ * @package    quizaccess_cheatdetect
  * @category   access
  * @copyright  2026 CBlue SRL
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later

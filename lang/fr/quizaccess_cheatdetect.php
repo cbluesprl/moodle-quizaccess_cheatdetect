@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * @package    mod_quizaccess_cheatdetect
+ * @package    quizaccess_cheatdetect
  * @copyright  2026 CBlue SRL
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @author     gnormand@cblue.be
@@ -59,3 +59,17 @@ $string['cheatdetectheader'] = 'Détection de triche';
 $string['cheatdetectinfo'] = 'La détection de triche est automatiquement activée pour ce quiz si vous sélectionnez la disposition "Une question par page". Le système surveillera le comportement des étudiants pendant les tentatives pour détecter des comportements suspects tels que la perte de focus, les actions copier/coller et les extensions de navigateur.';
 $string['layoutwarning'] = 'Attention : La détection de triche ne fonctionne qu\'avec la disposition "Une question par page". Veuillez modifier le paramètre "Questions par page" pour activer la surveillance.';
 $string['cheatdetectdescription'] = 'Ce quiz surveille le comportement des étudiants pendant les tentatives pour détecter des comportements suspects.';
+
+$string['cheatdetect:view'] = 'Voir la configuration et les données globales de détection de triche';
+$string['cheatdetect:manage'] = 'Gérer la configuration de la détection de triche';
+$string['cheatdetect:viewcoursereports'] = 'Voir les rapports de détection de triche du cours';
+
+$string['privacy:metadata:attemptid'] = 'L\'identifiant de la tentative de quiz associée à cet enregistrement.';
+$string['privacy:metadata:userid'] = 'L\'identifiant de l\'utilisateur associé à cet enregistrement.';
+$string['privacy:metadata:actions'] = 'Les actions enregistrées pendant la tentative de quiz.';
+$string['privacy:metadata:metrics'] = 'Les métriques calculées associées à la tentative de quiz de l\'utilisateur.';
+$string['privacy:metadata:extensions'] = 'Les données d\'extension associées à la tentative de quiz de l\'utilisateur.';
+
+$string['privacy:metadata:quizaccess_cheatdetect_events'] = 'Stocke les événements bruts enregistrés pendant les tentatives de quiz pour l\'analyse de détection de triche.';
+$string['privacy:metadata:quizaccess_cheatdetect_metrics'] = 'Stocke les métriques de détection de triche calculées pour chaque tentative de quiz.';
+$string['privacy:metadata:quizaccess_cheatdetect_extensions'] = 'Stocke les données d\'extension liées aux tentatives de quiz à des fins de détection de triche.';

@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * @package    mod_quizaccess_cheatdetect
+ * @package    quizaccess_cheatdetect
  * @copyright  2026 CBlue SRL
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @author     gnormand@cblue.be, abrichard@cblue.be
@@ -95,6 +95,23 @@ $functions = [
         'description' => 'Get cheat detection summaries for multiple attempts',
         'type'        => 'read',
         'ajax'        => true,
+        'loginrequired' => true,
+    ],
+
+    'quizaccess_cheatdetect_save_data' => [
+        'classname'    => 'mod_quizaccess_cheatdetect\external\save_data',
+        'methodname'   => 'execute',
+        'description'  => 'Saves cheat detection tracking data.',
+        'type'         => 'write',
+        'capabilities' => 'mod/quizaccess_cheatdetect:savedetectiondata', // declared here too
+        'loginrequired' => true,
+    ],
+    'quizaccess_cheatdetect_get_bulk_attempt_summaries' => [
+        'classname'    => 'mod_quizaccess_cheatdetect\external\get_bulk_attempt_summaries',
+        'methodname'   => 'execute',
+        'description'  => 'Returns bulk attempt summaries.',
+        'type'         => 'read',
+        'capabilities' => 'mod/quizaccess_cheatdetect:viewattempts',
         'loginrequired' => true,
     ],
 ];

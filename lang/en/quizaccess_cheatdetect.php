@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * @package    mod_quizaccess_cheatdetect
+ * @package    quizaccess_cheatdetect
  * @copyright  2026 CBlue SRL
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @author     gnormand@cblue.be
@@ -58,3 +58,17 @@ $string['cheatdetectheader'] = 'Cheat Detection';
 $string['cheatdetectinfo'] = 'Cheat detection is automatically enabled for this quiz if you select "One question per page" layout. The system will monitor student behavior during quiz attempts to detect potential cheating patterns such as focus loss, copy/paste actions, and browser extensions.';
 $string['layoutwarning'] = 'Warning: Cheat detection only works with "One question per page" layout. Please change the "Questions per page" setting to enable monitoring.';
 $string['cheatdetectdescription'] = 'This quiz monitors student behavior during attempts to detect potential cheating patterns.';
+
+$string['cheatdetect:view'] = 'View cheat detection configuration and global data';
+$string['cheatdetect:manage'] = 'Manage cheat detection configuration';
+$string['cheatdetect:viewcoursereports'] = 'View cheat detection course reports';
+
+$string['privacy:metadata:attemptid'] = 'The ID of the quiz attempt associated with this record.';
+$string['privacy:metadata:userid'] = 'The ID of the user associated with this record.';
+$string['privacy:metadata:actions'] = 'The actions recorded during the quiz attempt.';
+$string['privacy:metadata:metrics'] = 'The computed metrics associated with the user\'s quiz attempt.';
+$string['privacy:metadata:extensions'] = 'The extension data associated with the user\'s quiz attempt.';
+
+$string['privacy:metadata:quizaccess_cheatdetect_events'] = 'Stores raw events recorded during quiz attempts for cheat detection analysis.';
+$string['privacy:metadata:quizaccess_cheatdetect_metrics'] = 'Stores computed cheat detection metrics for each quiz attempt.';
+$string['privacy:metadata:quizaccess_cheatdetect_extensions'] = 'Stores extension data linked to quiz attempts for cheat detection purposes.';

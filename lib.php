@@ -22,7 +22,7 @@
  * It ensures that the script is only added on relevant quiz report pages
  * and that the user has the required capability to view cheat detection reports.
  *
- * @package    mod_quizaccess_cheatdetect
+ * @package    quizaccess_cheatdetect
  * @category   output
  * @copyright  2026 CBlue SRL
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
