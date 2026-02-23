@@ -12,7 +12,7 @@
  * Provides high-level query methods to retrieve and aggregate
  * cheat detection metrics and extension data for quiz attempts.
  *
- * @package    mod_quizaccess_cheatdetect
+ * @package    quizaccess_cheatdetect
  * @copyright  2026 CBlue SRL
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @author     gnormand@cblue.be
@@ -21,10 +21,10 @@
  */
 namespace quizaccess_cheatdetect;
 
+defined('MOODLE_INTERNAL') || die();
+
 use quizaccess_cheatdetect\persistent\metric;
 use quizaccess_cheatdetect\persistent\extension;
-
-defined('MOODLE_INTERNAL') || die();
 
 /**
  * Helper class for querying cheat detection data.

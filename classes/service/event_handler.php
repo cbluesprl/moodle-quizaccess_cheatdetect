@@ -16,7 +16,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * @package    mod_quizaccess_cheatdetect
+ * @package    quizaccess_cheatdetect
  * @copyright  2026 CBlue SRL
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @author     gnormand@cblue.be, abrichard@cblue.be
@@ -38,7 +38,7 @@ use quizaccess_cheatdetect\persistent\extension;
  * It stores raw events, updates related metrics, dispatches specific
  * handlers depending on the action type, and manages extension detection.
  *
- * @package    mod_quizaccess_cheatdetect
+ * @package    quizaccess_cheatdetect
  */
 class event_handler {
 
@@ -61,21 +61,16 @@ class event_handler {
 
         $timestamp = (int)$eventdata->timestamp['unix'];
 
-        // Sauvegarder l'événement brut
         self::save_raw_event($eventdata, $context, $timestamp);
 
-        // Récupère ou crée le metric
         $metric = self::metric($context);
 
-        // Mettre à jour le timestamp du dernier événement
         $metric->set('last_event_timestamp', (int)$eventdata->timestamp['unix']);
         $metric->set('timemodified', time());
 
-        // Dispatcher vers le handler spécifique selon l'action
         $timestamp = (int)$eventdata->timestamp['unix'];
         self::dispatch_handler($eventdata, $context, $timestamp);
 
-        // Si extensions_detected, traiter séparément
         if ($eventdata->action === 'extensions_detected') {
             self::save_extensions($eventdata, $context);
         }
@@ -126,7 +121,6 @@ class event_handler {
             $record->set('data_json', json_encode($event_data->data));
         }
 
-        // Debug : afficher les erreurs de validation
         if (!$record->is_valid()) {
             $errors = $record->get_errors();
             error_log('EVENT VALIDATION ERRORS: ' . json_encode($errors));
@@ -282,7 +276,6 @@ class event_handler {
     public static function metric(array $context): metric {
         global $DB;
 
-        // Chercher l'entrée existante
         $existing = metric::get_record([
             'attemptid' => $context['attemptid'],
             'userid'    => $context['userid'],
@@ -294,7 +287,6 @@ class event_handler {
             return $existing;
         }
 
-        // Si rien n'existe, créer un nouveau metric au lieu de retourner false
         $new = new metric();
         $new->set('attemptid', $context['attemptid']);
         $new->set('userid', $context['userid']);
@@ -302,7 +294,7 @@ class event_handler {
         $new->set('slot', $context['slot']);
         $new->set('timecreated', time());
         $new->set('timemodified', time());
-        $new->create(); // insérer dans la BDD immédiatement si besoin
+        $new->create();
 
         return $new;
     }
@@ -344,5 +336,17 @@ class event_handler {
      */
     private static function to_seconds($jsTimestamp): int {
         return (int) ($jsTimestamp / self::TIMESTAMP_CONVERSION_FACTOR);
+    }
+
+    private static function save_extensions(\stdClass $eventdata, array $context): void {
+        global $DB;
+
+        $record = new \stdClass();
+        $record->attemptid   = $eventdata->attemptid ?? null;
+        $record->userid      = $eventdata->userid ?? null;
+        $record->extensions  = json_encode($eventdata->extensions ?? []);
+        $record->timecreated = time();
+
+        $DB->insert_record('quizaccess_cheatdetect_extensions', $record);
     }
 }
