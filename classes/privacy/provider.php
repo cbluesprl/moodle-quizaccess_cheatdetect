@@ -205,10 +205,14 @@ class provider implements
         $contexts = $contextlist->get_contexts();
 
         foreach ($contexts as $context) {
-            $DB->delete_records('quizaccess_cheatdetect', [
-                'userid' => $userid,
-                'quizid' => $context->instanceid,
-            ]);
+            $quizid = $context->instanceid;
+
+            $subquery = "attemptid IN (SELECT id FROM {quiz_attempts} WHERE quiz = :quizid) AND userid = :userid";
+            $params = ['quizid' => $quizid, 'userid' => $userid];
+
+            $DB->delete_records_select('quizaccess_cheatdetect_events', $subquery, $params);
+            $DB->delete_records_select('quizaccess_cheatdetect_metrics', $subquery, $params);
+            $DB->delete_records_select('quizaccess_cheatdetect_extensions', $subquery, $params);
         }
     }
 
