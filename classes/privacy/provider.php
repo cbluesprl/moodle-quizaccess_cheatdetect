@@ -16,7 +16,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * @package    quizaccess_cheatdetect
+ * @package    mod_quizaccess_cheatdetect
  * @copyright  2026 CBlue SRL
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @author     gnormand@cblue.be, abrichard@cblue.be
@@ -42,7 +42,7 @@ use core_privacy\local\request\writer;
  * - The export of user data
  * - The deletion of user data (single user, multiple users, or all users)
  *
- * @package    quizaccess_cheatdetect
+ * @package    mod_quizaccess_cheatdetect
  * @copyright  2026 CBlue SRL
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -98,23 +98,22 @@ class provider implements
      * @return contextlist The list of contexts containing data for the user.
      */
     public static function get_contexts_for_userid(int $userid): contextlist {
-        global $DB;
-
         $contextlist = new contextlist();
 
-        $sql = "SELECT DISTINCT q.id
-                  FROM {quiz} q
-                  JOIN {quiz_attempts} qa ON qa.quiz = q.id
-                  JOIN {quizaccess_cheatdetect_events} cde ON cde.attemptid = qa.id
-                 WHERE cde.userid = :userid";
+        $sql = "SELECT ctx.id
+              FROM {context} ctx
+              JOIN {course_modules} cm ON cm.id = ctx.instanceid AND ctx.contextlevel = :contextlevel
+              JOIN {quiz} q ON q.id = cm.instance
+              JOIN {quiz_attempts} qa ON qa.quiz = q.id
+              JOIN {quizaccess_cheatdetect_events} cde ON cde.attemptid = qa.id
+             WHERE cde.userid = :userid";
 
-        $quizzes = $DB->get_records_sql($sql, ['userid' => $userid]);
+        $params = [
+            'contextlevel' => CONTEXT_MODULE,
+            'userid'       => $userid,
+        ];
 
-        foreach ($quizzes as $quiz) {
-            $cm = get_coursemodule_from_instance('quiz', $quiz->id);
-            $context = \context_module::instance($cm->id);
-            $contextlist->add_context($context);
-        }
+        $contextlist->add_from_sql($sql, $params);
 
         return $contextlist;
     }
@@ -143,10 +142,8 @@ class provider implements
                 ['quizid' => $quizid, 'userid' => $user->id]
             );
 
-            writer::export_data(
-                [$context->id, 'events'],
-                array_values($events)
-            );
+            writer::with_context($context)->export_related_data([], 'events', (object)['data' => array_values($events)]);
+
 
             // Export metrics
             $metrics = $DB->get_records_sql("
@@ -158,10 +155,8 @@ class provider implements
                 ['quizid' => $quizid, 'userid' => $user->id]
             );
 
-            writer::export_data(
-                [$context->id, 'metrics'],
-                array_values($metrics)
-            );
+            writer::with_context($context)->export_related_data([], 'metrics', (object)['data' => array_values($metrics)]);
+
 
             // Export extensions
             $extensions = $DB->get_records_sql("
@@ -173,10 +168,8 @@ class provider implements
                 ['quizid' => $quizid, 'userid' => $user->id]
             );
 
-            writer::export_data(
-                [$context->id, 'extensions'],
-                array_values($extensions)
-            );
+            writer::with_context($context)->export_related_data([], 'extensions', (object)['data' => array_values($extensions)]);
+
         }
     }
 
@@ -205,17 +198,22 @@ class provider implements
      * @param int $userid The user ID whose data should be deleted.
      * @return void
      */
-    public static function delete_data_for_user(\context $context, $userid) {
+    public static function delete_data_for_user(\core_privacy\local\request\approved_contextlist $contextlist) {
         global $DB;
 
-        $quizid = $context->instanceid;
+        $userid = $contextlist->get_user()->id;
+        $contexts = $contextlist->get_contexts();
 
-        $subquery = "attemptid IN (SELECT id FROM {quiz_attempts} WHERE quiz = :quizid) AND userid = :userid";
-        $params = ['quizid' => $quizid, 'userid' => $userid];
+        foreach ($contexts as $context) {
+            $quizid = $context->instanceid;
 
-        $DB->delete_records_select('quizaccess_cheatdetect_events', $subquery, $params);
-        $DB->delete_records_select('quizaccess_cheatdetect_metrics', $subquery, $params);
-        $DB->delete_records_select('quizaccess_cheatdetect_extensions', $subquery, $params);
+            $subquery = "attemptid IN (SELECT id FROM {quiz_attempts} WHERE quiz = :quizid) AND userid = :userid";
+            $params = ['quizid' => $quizid, 'userid' => $userid];
+
+            $DB->delete_records_select('quizaccess_cheatdetect_events', $subquery, $params);
+            $DB->delete_records_select('quizaccess_cheatdetect_metrics', $subquery, $params);
+            $DB->delete_records_select('quizaccess_cheatdetect_extensions', $subquery, $params);
+        }
     }
 
     /**
@@ -248,8 +246,11 @@ class provider implements
      * @param int[] $userids The list of user IDs whose data should be deleted.
      * @return void
      */
-    public static function delete_data_for_users(\context $context, array $userids) {
+    public static function delete_data_for_users(\core_privacy\local\request\approved_userlist $userlist) {
         global $DB;
+
+        $userids = $userlist->get_userids();
+        $context = $userlist->get_context();
 
         if (empty($userids)) {
             return;
