@@ -30,7 +30,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2026020400;
+$plugin->version = 2026031200;
 $plugin->requires  = 2022041900;
 $plugin->component = 'quizaccess_cheatdetect';
 $plugin->maturity = MATURITY_STABLE;
