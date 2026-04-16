@@ -98,20 +98,4 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    'quizaccess_cheatdetect_save_data' => [
-        'classname'    => 'mod_quizaccess_cheatdetect\external\save_data',
-        'methodname'   => 'execute',
-        'description'  => 'Saves cheat detection tracking data.',
-        'type'         => 'write',
-        'capabilities' => 'mod/quizaccess_cheatdetect:savedetectiondata', // declared here too
-        'loginrequired' => true,
-    ],
-    'quizaccess_cheatdetect_get_bulk_attempt_summaries' => [
-        'classname'    => 'mod_quizaccess_cheatdetect\external\get_bulk_attempt_summaries',
-        'methodname'   => 'execute',
-        'description'  => 'Returns bulk attempt summaries.',
-        'type'         => 'read',
-        'capabilities' => 'mod/quizaccess_cheatdetect:viewattempts',
-        'loginrequired' => true,
-    ],
 ];
