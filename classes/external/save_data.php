@@ -105,7 +105,7 @@ class save_data extends external_api {
         require_login();
 
         // Prevent students from writing arbitrary tracking data
-        require_capability('mod/cheatdetect:savedetectiondata', $context);
+        require_capability('quizaccess/cheatdetect:savedetectiondata', $context);
 
         $transaction = $DB->start_delegated_transaction();
 
