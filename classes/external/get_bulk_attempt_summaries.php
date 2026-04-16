@@ -68,11 +68,7 @@ class get_bulk_attempt_summaries extends external_api {
         $quiz = $DB->get_record('quiz', ['id' => $first_attempt->quiz], 'id, course', MUST_EXIST);
         $course_context = context_course::instance($quiz->course);
 
-        require_capability('quizaccess/cheatdetect:viewattempts', $course_context);
-
-        if (!has_capability('quizaccess/cheatdetect:viewcoursereports', $course_context)) {
-            throw new \Exception('Permission denied');
-        }
+        require_capability('quizaccess/cheatdetect:viewcoursereports', $course_context);
 
         $results = [];
         foreach ($attemptids as $attemptid) {
