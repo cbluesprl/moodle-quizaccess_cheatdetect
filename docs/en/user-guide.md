@@ -8,6 +8,10 @@
 
 Monitoring is automatically enabled.
 
+The same monitoring also runs when the quiz is embedded in a course format
+that loads the attempt page inside an iframe (e.g. `boostcamp_episode`).
+No extra setup is required from your side.
+
 ---
 
 ## Viewing Behavioral Data
@@ -29,8 +33,21 @@ During quiz review, teachers can see:
 
 ## Interpreting Results
 
-High focus loss may indicate tab switching.
+High **focus loss count** is the strongest behavioural red flag — it
+typically reflects the student switching browser tabs or apps during the
+attempt. Each focus-loss event recorded by the plugin is internally
+qualified by a level:
 
-Copy attempts indicate text selection copying.
+- **High** — the browser tab was hidden (tab switch, window minimised).
+- **Medium** — the browser window lost OS-level focus (alt-tab, click on
+  another application).
 
-These indicators must be interpreted carefully and should not be used as sole evidence of cheating.
+These levels are stored with the raw events and may be surfaced in future
+report enhancements; the current report shows the aggregated count.
+
+**Copy attempts** indicate text selection followed by Ctrl/Cmd+C inside a
+question statement. They do not capture content typed in the answer area.
+
+These indicators must be interpreted carefully and should not be used as
+sole evidence of cheating. Always consider the broader context (network
+drops, accessibility tools, legitimate breaks) before drawing conclusions.

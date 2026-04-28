@@ -50,6 +50,16 @@ define([
             let extensionCheckInterval = null;
             let extensionDetectedDataAlreadySent = new Set();
 
+            // Embedded-mode detection: when the attempt page is loaded inside an iframe
+            // (e.g. boostcamp_episode format), the iframe's own window.focus/blur events
+            // fire on every click in the parent chrome and produce false-positive focus_loss.
+            // In that case we delegate visibility/focus tracking to the parent_bridge module
+            // which posts authoritative signals via window.postMessage.
+            const isEmbedded = window.self !== window.top || backendParams.embedded === 1;
+            const PARENT_BRIDGE_SRC = 'cheatdetect.parent';
+            const PARENT_BRIDGE_TIMEOUT_MS = 3000;
+            let lastParentBeat = Date.now();
+
             /**
              * Retrieve current extension detection metrics
              * @function getExtensionsMetrics
@@ -267,6 +277,44 @@ define([
             }
 
             /**
+             * Handle a focus/visibility signal forwarded by the parent window via postMessage.
+             * Reasons map to suspicion levels:
+             *   - tab_hidden / tab_visible : level 'high'   (whole tab toggled hidden)
+             *   - app_blur   / app_focus   : level 'medium' (parent window lost OS focus)
+             * The function only emits an event when the focused state actually changes,
+             * to avoid duplicates when both visibilitychange and window blur fire together.
+             * @function handleParentSignal
+             * @param {string} reason - Reason tag carried in the parent message
+             * @param {string} level - Suspicion level ('high'|'medium'|'low')
+             * @returns {void}
+             * @private
+             */
+            function handleParentSignal(reason, level) {
+                const isLossSignal = (reason === 'tab_hidden' || reason === 'app_blur');
+                if (isLossSignal && isCurrentlyFocused) {
+                    isCurrentlyFocused = false;
+                    logEvent({
+                        action: 'focus_loss',
+                        data: {
+                            level: level,
+                            reason: reason,
+                            previousState: 'foreground'
+                        }
+                    });
+                } else if (!isLossSignal && !isCurrentlyFocused) {
+                    isCurrentlyFocused = true;
+                    logEvent({
+                        action: 'focus_gain',
+                        data: {
+                            level: level,
+                            reason: reason,
+                            previousState: 'background'
+                        }
+                    });
+                }
+            }
+
+            /**
              * Track copy events only within .qtext elements inside question divs
              * Only logs copies from question text areas to detect potential cheating
              * @function trackCopy
@@ -367,13 +415,74 @@ define([
 
                 startExtensionMonitoring();
 
+                // visibilitychange is reliable in both modes: per MDN, an iframe's
+                // visibilityState mirrors the parent document, so this acts as a fallback
+                // even when the parent_bridge is not yet ready.
                 document.addEventListener("visibilitychange", trackDocumentState);
 
-                document.addEventListener("blur", trackDocumentState, true);
+                if (!isEmbedded) {
+                    // Standalone mode: keep the historical window-level focus tracking.
+                    document.addEventListener("blur", trackDocumentState, true);
+                    window.addEventListener("focus", trackDocumentState);
+                    window.addEventListener("blur", trackDocumentState);
+                } else {
+                    // Embedded mode: focus is delegated to the parent_bridge.
+                    // We only accept messages from the same origin and tagged with our SRC marker
+                    // (defends against any other postMessage producer on the page).
+                    window.addEventListener("message", (event) => {
+                        if (event.origin !== window.location.origin) {
+                            return;
+                        }
+                        const msg = event.data;
+                        if (!msg || msg.src !== PARENT_BRIDGE_SRC) {
+                            return;
+                        }
 
-                window.addEventListener("focus", trackDocumentState);
+                        lastParentBeat = Date.now();
 
-                window.addEventListener("blur", trackDocumentState);
+                        if (msg.type === 'visibility') {
+                            handleParentSignal(msg.hidden ? 'tab_hidden' : 'tab_visible', 'high');
+                        } else if (msg.type === 'window_focus') {
+                            handleParentSignal(msg.focused ? 'app_focus' : 'app_blur', 'medium');
+                        }
+                        // 'heartbeat' messages only refresh lastParentBeat above.
+                    });
+
+                    // Self-inject the parent_bridge into the parent window. This keeps the
+                    // bridge protocol fully encapsulated inside quizaccess_cheatdetect: no
+                    // host-page (course format / theme / local plugin) needs to know about
+                    // it. Same-origin only — cross-origin parents will throw on the property
+                    // access below, in which case the watchdog will log parent_bridge_missing.
+                    if (window.parent && window.parent !== window) {
+                        try {
+                            const parentRequire = window.parent.require;
+                            if (typeof parentRequire === 'function'
+                                && !window.parent._cheatdetectParentBridgeInitialized) {
+                                parentRequire(['quizaccess_cheatdetect/parent_bridge'], function(bridge) {
+                                    bridge.init();
+                                });
+                            }
+                        } catch (e) {
+                            // Cross-origin parent or no AMD loader available; silent fallback.
+                        }
+                    }
+
+                    // Watchdog: if the parent_bridge stops sending heartbeats, log it once
+                    // (suspicious: page may have been re-parented or bridge module not loaded).
+                    setInterval(() => {
+                        if (Date.now() - lastParentBeat > PARENT_BRIDGE_TIMEOUT_MS) {
+                            logEvent({
+                                action: 'parent_bridge_missing',
+                                data: {
+                                    level: 'medium',
+                                    reason: 'no_heartbeat_3s'
+                                }
+                            });
+                            // Reset so we don't spam: next missing window will fire after another timeout.
+                            lastParentBeat = Date.now();
+                        }
+                    }, PARENT_BRIDGE_TIMEOUT_MS);
+                }
 
                 document.addEventListener("copy", (event) => trackCopy(event));
 

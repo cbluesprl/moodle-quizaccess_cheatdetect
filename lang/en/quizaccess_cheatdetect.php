@@ -72,3 +72,9 @@ $string['privacy:metadata:extensions'] = 'The extension data associated with the
 $string['privacy:metadata:quizaccess_cheatdetect_events'] = 'Stores raw events recorded during quiz attempts for cheat detection analysis.';
 $string['privacy:metadata:quizaccess_cheatdetect_metrics'] = 'Stores computed cheat detection metrics for each quiz attempt.';
 $string['privacy:metadata:quizaccess_cheatdetect_extensions'] = 'Stores extension data linked to quiz attempts for cheat detection purposes.';
+
+// Embedded-mode (iframe) event labels used in reports.
+$string['event_tab_hidden'] = 'Browser tab hidden';
+$string['event_app_blur'] = 'Application window lost focus';
+$string['event_iframe_blur'] = 'Quiz frame lost focus';
+$string['event_parent_bridge_missing'] = 'Quiz parent page stopped responding';

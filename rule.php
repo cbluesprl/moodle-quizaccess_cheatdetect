@@ -215,6 +215,10 @@ class quizaccess_cheatdetect extends quizaccess_cheat_detect_parent_class {
         $attemptid = optional_param('attempt', 0, PARAM_INT);
         // Page defaults to 0 (first page) when not specified in URL.
         $page_number = optional_param('page', 0, PARAM_INT);
+        // Detect whether the attempt page is loaded inside an iframe (e.g. boostcamp_episode format).
+        // When non-zero, the JS tracker switches to embedded mode and listens to postMessage signals
+        // from the parent_bridge AMD module instead of the iframe's own focus/blur events.
+        $embedded = optional_param('embedded', 0, PARAM_INT);
 
         // Get or generate session ID for tracking.
         $sessionId = session_id();
@@ -242,7 +246,8 @@ class quizaccess_cheatdetect extends quizaccess_cheat_detect_parent_class {
             'userid' => $USER->id,
             'quizid' => $this->quiz->id,
             'slot' => $slot ?: null,
-            'startDetection' => true
+            'startDetection' => true,
+            'embedded' => $embedded,
         ];
 
         // Initialize the tracking JavaScript module.

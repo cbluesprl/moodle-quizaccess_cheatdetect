@@ -48,6 +48,50 @@ Security
 N/A (initial release)
 
 
+[2.1.0] - 2026-04-28
+Added
+
+Iframe-embedded quiz support: when a quiz attempt is loaded inside an
+<iframe> (e.g. by a custom course format such as boostcamp_episode),
+the tracker auto-detects embedded mode (URL embedded=1 parameter, or
+window.self !== window.top) and self-injects a parent-side bridge
+module (quizaccess_cheatdetect/parent_bridge) into the host window via
+window.parent.require. Same-origin only.
+Parent-side bridge module that forwards visibilitychange and
+window focus/blur events from the host page to embedded quiz iframes
+through window.postMessage, with strict targetOrigin and a static
+source tag (cheatdetect.parent) for receiver authentication.
+New data_json qualifiers on focus events:
+  level: 'high' (tab toggled hidden) or 'medium' (window lost OS focus)
+  reason: 'tab_hidden' / 'tab_visible' / 'app_blur' / 'app_focus'
+New event action parent_bridge_missing raised when the parent-side
+bridge stops sending heartbeats for 3 s (signals a cross-origin embed
+or that the host page never loaded the bridge).
+
+Changed
+
+setup_attempt_page now reads optional URL parameter embedded and
+forwards it to the JS tracker, which uses it to switch into embedded
+mode without relying solely on window.top inspection.
+In embedded mode, window.focus / window.blur listeners on the iframe
+window are no longer registered (they were producing false positives
+on every click in the parent chrome). visibilitychange remains as a
+fallback signal.
+Plugin version bumped to 2026042801, release tag v2.1.
+
+Fixed
+
+Eliminated false-positive focus_loss events triggered when the user
+clicked in the parent-page chrome (navbar, dropdowns, edit toggle…)
+of an iframe-embedded quiz.
+
+Security
+
+postMessage messages are validated by both event.origin equality with
+window.location.origin and a static event.data.src marker before being
+processed by the iframe-side tracker.
+
+
 [2.0.0] - 2026-02-04
 Added
 

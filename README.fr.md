@@ -20,8 +20,14 @@ Les données collectées sont agrégées et affichées dans les pages de relectu
 ## Fonctionnalités
 
 - Activation automatique lorsque le quiz est configuré avec **"Une question par page"**
+- **Fonctionne en mode standalone et en iframe embarquée** — lorsqu'une
+  tentative est chargée dans une iframe (par exemple par un format de cours
+  personnalisé), le tracker détecte automatiquement le mode embarqué et
+  auto-injecte un module bridge dans la page parente via
+  `window.parent.require`. Aucune intégration côté hôte n'est nécessaire.
 - Détection de :
-    - Pertes de focus
+    - Pertes de focus (qualifiées par `level` et `reason` en mode embarqué :
+      `tab_hidden` / `app_blur`)
     - Tentatives de copie
     - Présence d’extensions de navigateur
 - Métriques comportementales par question
@@ -123,6 +129,10 @@ Le plugin implémente la Privacy API de Moodle et prend en charge :
 - Nécessite obligatoirement le mode **"Une question par page"**
 - Dépend du JavaScript côté navigateur
 - Ne peut pas détecter les appareils externes ou les logiciels d’enregistrement d’écran
+- Les iframes embarquant le quiz doivent être en **same-origin** par rapport
+  au LMS pour bénéficier de la qualification complète des signaux. Une iframe
+  cross-origin se rabat sur `visibilitychange` uniquement et émet un
+  événement `parent_bridge_missing` après 3 s de silence du bridge.
 
 ---
 

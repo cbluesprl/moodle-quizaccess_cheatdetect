@@ -73,3 +73,9 @@ $string['privacy:metadata:extensions'] = 'Les données d\'extension associées �
 $string['privacy:metadata:quizaccess_cheatdetect_events'] = 'Stocke les événements bruts enregistrés pendant les tentatives de quiz pour l\'analyse de détection de triche.';
 $string['privacy:metadata:quizaccess_cheatdetect_metrics'] = 'Stocke les métriques de détection de triche calculées pour chaque tentative de quiz.';
 $string['privacy:metadata:quizaccess_cheatdetect_extensions'] = 'Stocke les données d\'extension liées aux tentatives de quiz à des fins de détection de triche.';
+
+// Libellés des événements en mode embarqué (iframe) pour les rapports.
+$string['event_tab_hidden'] = 'Onglet du navigateur masqué';
+$string['event_app_blur'] = 'Fenêtre de l\'application a perdu le focus';
+$string['event_iframe_blur'] = 'Cadre du quiz a perdu le focus';
+$string['event_parent_bridge_missing'] = 'La page parente du quiz a cessé de répondre';

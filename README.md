@@ -19,8 +19,13 @@ The collected data is aggregated and displayed in quiz review and report pages f
 ## Features
 
 - Automatic activation when using **"One question per page"** layout
+- **Works in standalone and iframe-embedded contexts** — when a quiz attempt
+  is loaded inside an iframe (e.g. by a custom course format), the tracker
+  auto-detects embedded mode and self-injects a parent-side bridge through
+  `window.parent.require`. No host-page integration is required.
 - Detection of:
-    - Focus loss events
+    - Focus loss events (qualified by `level` and `reason` in embedded mode:
+      `tab_hidden` / `app_blur`)
     - Copy attempts
     - Browser extension presence
 - Per-question behavioral metrics
@@ -120,6 +125,9 @@ The plugin implements Moodle’s Privacy API and supports:
 - Requires **"One question per page"** layout.
 - Depends on browser-side JavaScript.
 - Cannot detect external devices or screen recording software.
+- Iframe embeds must be **same-origin** as the LMS for full signal fidelity.
+  Cross-origin embeds fall back to `visibilitychange` only and emit a
+  `parent_bridge_missing` event after 3 s of bridge silence.
 
 ---
 
