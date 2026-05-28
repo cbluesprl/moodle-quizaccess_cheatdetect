@@ -215,7 +215,10 @@ class event_handler {
      */
     private static function handle_page_unload_event(\stdClass $event, array $ctx, int $ts): void {
         $metric = self::metric($ctx);
-        self::close_time_window($metric, $ts, $metric->get('current_state'));
+        $state = $metric->get('current_state');
+        if ($state !== null) {
+            self::close_time_window($metric, $ts, $state);
+        }
         $metric->save();
     }
     /**

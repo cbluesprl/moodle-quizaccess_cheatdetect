@@ -190,15 +190,22 @@ class helper {
                     SUM(m.time_total) as total_time,
                     SUM(m.copy_count) as total_copies,
                     SUM(m.focus_loss_count) as total_focus_losses,
-                    SUM(m.extension_count) as total_extensions,
-                    q.questionsperpage
+                    SUM(m.extension_count) as total_extensions
                 FROM {" . metric::TABLE . "} m
-                JOIN {quiz_attempts} qa ON qa.id = m.attemptid
-                JOIN {quiz} q ON q.id = qa.quiz
                 WHERE m.attemptid = :attemptid
                 AND m.slot IS NOT NULL";
 
         $result = $DB->get_record_sql($sql, ['attemptid' => $attemptid]);
+
+        // Quiz layout is a property of the quiz, not of the metrics — resolve it
+        // independently so the flag stays correct even when no metrics were captured.
+        $questionsperpage = $DB->get_field_sql(
+            "SELECT q.questionsperpage
+               FROM {quiz_attempts} qa
+               JOIN {quiz} q ON q.id = qa.quiz
+              WHERE qa.id = :attemptid",
+            ['attemptid' => $attemptid]
+        );
 
         $summary = [
             'slot_count' => $result ? (int)$result->slot_count : 0,
@@ -206,7 +213,7 @@ class helper {
             'total_copies' => $result ? (int)$result->total_copies : 0,
             'total_focus_losses' => $result ? (int)$result->total_focus_losses : 0,
             'total_extensions' => $result ? (int)$result->total_extensions : 0,
-            'has_only_one_question_per_page' => $result && (int)$result->questionsperpage === 1,
+            'has_only_one_question_per_page' => $questionsperpage !== false && (int)$questionsperpage === 1,
         ];
 
         $total_copies = $result ? (int)$result->total_copies : 0;
