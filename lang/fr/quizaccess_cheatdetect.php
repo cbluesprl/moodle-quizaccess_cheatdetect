@@ -60,6 +60,16 @@ $string['cheatdetectinfo'] = 'La détection de triche est automatiquement activ�
 $string['layoutwarning'] = 'Attention : La détection de triche ne fonctionne qu\'avec la disposition "Une question par page". Veuillez modifier le paramètre "Questions par page" pour activer la surveillance.';
 $string['cheatdetectdescription'] = 'Ce quiz surveille le comportement des étudiants pendant les tentatives pour détecter des comportements suspects.';
 
+// Réglages admin : surcharge de la description affichée aux étudiants, par langue.
+$string['setting:descriptionheading'] = 'Description affichée aux étudiants';
+$string['setting:descriptionheading_desc'] = 'Personnalisez le message affiché aux étudiants dans la section d\'information du quiz. Le plugin affiche le champ correspondant à la langue de l\'utilisateur. Laissez un champ vide pour utiliser le texte par défaut.';
+$string['setting:customdescriptionenabled'] = 'Utiliser une description personnalisée';
+$string['setting:customdescriptionenabled_desc'] = 'Lorsque cette option est activée, les descriptions par langue ci-dessous remplacent le texte par défaut affiché aux étudiants. Lorsqu\'elle est désactivée, le texte par défaut est toujours utilisé.';
+$string['setting:descriptionen'] = 'Description (anglais)';
+$string['setting:descriptionen_desc'] = 'Texte affiché aux étudiants dont la langue d\'interface est l\'anglais.';
+$string['setting:descriptionfr'] = 'Description (français)';
+$string['setting:descriptionfr_desc'] = 'Texte affiché aux étudiants dont la langue d\'interface est le français.';
+
 $string['cheatdetect:view'] = 'Voir la configuration et les données globales de détection de triche';
 $string['cheatdetect:manage'] = 'Gérer la configuration de la détection de triche';
 $string['cheatdetect:viewcoursereports'] = 'Voir les rapports de détection de triche du cours';

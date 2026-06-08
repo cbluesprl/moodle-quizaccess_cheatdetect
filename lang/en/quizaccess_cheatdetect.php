@@ -59,6 +59,16 @@ $string['cheatdetectinfo'] = 'Cheat detection is automatically enabled for this 
 $string['layoutwarning'] = 'Warning: Cheat detection only works with "One question per page" layout. Please change the "Questions per page" setting to enable monitoring.';
 $string['cheatdetectdescription'] = 'This quiz monitors student behavior during attempts to detect potential cheating patterns.';
 
+// Admin settings: per-language description override shown to students.
+$string['setting:descriptionheading'] = 'Description shown to students';
+$string['setting:descriptionheading_desc'] = 'Customize the message displayed to students in the quiz information section. The plugin shows the field matching the user\'s language. Leave a field empty to use the default text.';
+$string['setting:customdescriptionenabled'] = 'Use a custom description';
+$string['setting:customdescriptionenabled_desc'] = 'When enabled, the per-language descriptions below replace the default text shown to students. When disabled, the default text is always used.';
+$string['setting:descriptionen'] = 'Description (English)';
+$string['setting:descriptionen_desc'] = 'Text shown to students whose interface language is English.';
+$string['setting:descriptionfr'] = 'Description (French)';
+$string['setting:descriptionfr_desc'] = 'Text shown to students whose interface language is French.';
+
 $string['cheatdetect:view'] = 'View cheat detection configuration and global data';
 $string['cheatdetect:manage'] = 'Manage cheat detection configuration';
 $string['cheatdetect:viewcoursereports'] = 'View cheat detection course reports';

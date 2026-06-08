@@ -275,11 +275,40 @@ class quizaccess_cheatdetect extends quizaccess_cheat_detect_parent_class {
      * This provides a brief description that is shown to students when they view the quiz.
      * It informs them that their behavior during the quiz will be monitored.
      *
+     * When the "custom description" setting is enabled, the text is admin-configurable
+     * per language (EN/FR): the field matching the current language is used. When the
+     * setting is disabled, or the matching field is empty, the localized base string is used.
+     *
      * @return string Localized description string.
      * @since 1.0.0
      */
     public function description() {
-        return get_string('cheatdetectdescription', 'quizaccess_cheatdetect');
+        // Only use the overrides when the admin explicitly enabled the custom description.
+        if (empty(get_config('quizaccess_cheatdetect', 'customdescriptionenabled'))) {
+            return get_string('cheatdetectdescription', 'quizaccess_cheatdetect');
+        }
+
+        // Map the current language to its override field. Languages without a
+        // dedicated field (e.g. nl) fall through to the localized base string.
+        switch (substr(current_language(), 0, 2)) {
+            case 'fr':
+                $configkey = 'descriptionfr';
+                break;
+            case 'en':
+                $configkey = 'descriptionen';
+                break;
+            default:
+                return get_string('cheatdetectdescription', 'quizaccess_cheatdetect');
+        }
+
+        $description = get_config('quizaccess_cheatdetect', $configkey);
+
+        // Fall back to the localized base string when no override has been set.
+        if ($description === false || trim($description) === '') {
+            return get_string('cheatdetectdescription', 'quizaccess_cheatdetect');
+        }
+
+        return format_text($description, FORMAT_PLAIN);
     }
 
     /**
