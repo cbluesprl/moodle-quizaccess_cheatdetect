@@ -184,20 +184,7 @@ class get_bulk_attempt_summaries extends external_api {
                             PARAM_INT,
                             'Focus loss count'
                         ),
-                        'extensions_detected' => new external_multiple_structure(
-                            new external_single_structure([
-                                'extensionkey' => new external_value(
-                                    PARAM_TEXT,
-                                    'Extension key'
-                                ),
-                                'detectedElementUid' => new external_value(
-                                    PARAM_TEXT,
-                                    'Detected element UID'
-                                ),
-                            ]),
-                            'Detected extensions',
-                            VALUE_OPTIONAL
-                        ),
+                        'extensions_detected' => helper::extension_external_structure(),
                         'has_extension' => new external_value(
                             PARAM_BOOL,
                             'Has extensions'

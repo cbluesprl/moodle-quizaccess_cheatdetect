@@ -25,6 +25,9 @@ defined('MOODLE_INTERNAL') || die();
 
 use quizaccess_cheatdetect\persistent\metric;
 use quizaccess_cheatdetect\persistent\extension;
+use core_external\external_multiple_structure;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Helper class for querying cheat detection data.
@@ -122,6 +125,28 @@ class helper {
         }
 
         return $extensions;
+    }
+
+    /**
+     * External structure describing a single detected extension entry.
+     *
+     * Centralises the shape of the items produced by {@see self::get_slot_extensions()}
+     * so every web service exposing the "extensions_detected" field stays in sync
+     * with the data the helper actually returns.
+     *
+     * @return external_multiple_structure Structure for the "extensions_detected" field.
+     */
+    public static function extension_external_structure(): external_multiple_structure {
+        return new external_multiple_structure(
+            new external_single_structure([
+                'key' => new external_value(PARAM_TEXT, 'Extension key'),
+                'name' => new external_value(PARAM_TEXT, 'Extension name'),
+                'uid' => new external_value(PARAM_TEXT, 'Extension UID'),
+                'detected_at' => new external_value(PARAM_INT, 'Detection timestamp'),
+            ]),
+            'Detected extensions',
+            VALUE_OPTIONAL
+        );
     }
 
     /**

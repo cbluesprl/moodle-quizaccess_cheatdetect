@@ -119,15 +119,7 @@ class get_slot_summary extends external_api {
             'copy_count' => new external_value(PARAM_INT, 'Number of copy events'),
             'focus_loss_count' => new external_value(PARAM_INT, 'Number of focus loss events'),
 
-            'extensions_detected' => new external_multiple_structure(
-                new external_single_structure([
-                    'extension_key' => new external_value(PARAM_TEXT, 'Extension key'),
-                    'extension_name' => new external_value(PARAM_TEXT, 'Extension name'),
-                    'extension_uid' => new external_value(PARAM_TEXT, 'Extension UID'),
-                ]),
-                'Detected extensions',
-                VALUE_OPTIONAL
-            ),
+            'extensions_detected' => helper::extension_external_structure(),
 
             'has_extension' => new external_value(PARAM_BOOL, 'Has extensions'),
             'cheat_detected' => new external_value(PARAM_BOOL, 'Cheat detected for this slot'),
